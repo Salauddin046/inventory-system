@@ -81,8 +81,9 @@ export async function GET() {
 
             material_code,
 
-            SUM(
-              g_outward_qty
+            COALESCE(
+              SUM(g_outward_qty),
+              0
             ) AS outward_qty
 
           FROM outward_transactions
@@ -102,15 +103,12 @@ export async function GET() {
 
             material_code,
 
-            SUM(
-              allocated_qty
+            COALESCE(
+              SUM(allocated_qty),
+              0
             ) AS projection_qty
 
           FROM projection_master
-
-          WHERE
-          projection_action =
-          'Allocate'
 
           GROUP BY material_code
 
@@ -131,13 +129,7 @@ export async function GET() {
 
     console.log(error);
 
-    return NextResponse.json({
-
-      success: false,
-
-      error: error.message
-
-    });
+    return NextResponse.json([]);
 
   }
 
