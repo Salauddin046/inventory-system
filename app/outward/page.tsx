@@ -37,6 +37,15 @@ export default function OutwardPage() {
   const [vendorDepts, setVendorDepts] =
     useState<any[]>([]);
 
+  const [dateFilter, setDateFilter] =
+    useState({
+
+      from_date: "",
+
+      to_date: ""
+
+    });
+
   const [form, setForm] = useState({
 
     req_date: formattedDate,
@@ -93,11 +102,6 @@ export default function OutwardPage() {
 
       const outwardJson =
         await outwardRes.json();
-
-      console.log(
-        "OUTWARD DATA",
-        outwardJson
-      );
 
       if (
         Array.isArray(outwardJson)
@@ -253,8 +257,6 @@ export default function OutwardPage() {
       const result =
         await response.json();
 
-      console.log(result);
-
       if (result.success) {
 
         alert(
@@ -344,6 +346,176 @@ export default function OutwardPage() {
       });
 
     }
+
+  }
+
+  function formatDate(
+    dateString: string
+  ) {
+
+    if (!dateString) return "";
+
+    const date =
+      new Date(dateString);
+
+    return date.toLocaleDateString(
+      "en-IN"
+    );
+
+  }
+
+  function downloadCSV() {
+
+    const filteredRows =
+      outwardData.filter(
+        (item: any) => {
+
+          if (
+            !dateFilter.from_date ||
+            !dateFilter.to_date
+          ) {
+            return true;
+          }
+
+          const issuanceDate =
+            new Date(
+              item.issuance_date
+            );
+
+          const fromDate =
+            new Date(
+              dateFilter.from_date
+            );
+
+          const toDate =
+            new Date(
+              dateFilter.to_date
+            );
+
+          return (
+            issuanceDate >= fromDate &&
+            issuanceDate <= toDate
+          );
+
+        }
+      );
+
+    const headers = [
+
+      "Req Date",
+
+      "Month",
+
+      "Req Person",
+
+      "Vendor / Dept",
+
+      "Job Card",
+
+      "Material Code",
+
+      "Description",
+
+      "Req Qty",
+
+      "G Qty",
+
+      "NG Qty",
+
+      "UOM",
+
+      "Issuance Date",
+
+      "Tally Ref",
+
+      "Remarks"
+
+    ];
+
+    const rows =
+      filteredRows.map(
+        (item: any) => [
+
+          formatDate(
+            item.req_date
+          ),
+
+          item.month,
+
+          item.req_person,
+
+          item.to_vendor_dept,
+
+          item.job_card_po_no,
+
+          item.material_code,
+
+          item.material_description,
+
+          item.req_qty,
+
+          item.g_outward_qty,
+
+          item.ng_outward_qty,
+
+          item.uom,
+
+          formatDate(
+            item.issuance_date
+          ),
+
+          item.tally_ref_no,
+
+          item.remarks
+
+        ]
+      );
+
+    const csvContent = [
+
+      headers.join(","),
+
+      ...rows.map(
+        (e: any) =>
+          e.join(",")
+      )
+
+    ].join("\n");
+
+    const blob =
+      new Blob(
+        [csvContent],
+        {
+          type:
+            "text/csv;charset=utf-8;"
+        }
+      );
+
+    const link =
+      document.createElement("a");
+
+    const url =
+      URL.createObjectURL(blob);
+
+    link.setAttribute(
+      "href",
+      url
+    );
+
+    link.setAttribute(
+      "download",
+      "outward_report.csv"
+    );
+
+    document.body.appendChild(
+      link
+    );
+
+    link.click();
+
+    document.body.removeChild(
+      link
+    );
 
   }
 
@@ -593,6 +765,44 @@ export default function OutwardPage() {
 
       </form>
 
+      <div className="flex gap-4 mb-4">
+
+        <input
+          type="date"
+          value={dateFilter.from_date}
+          onChange={(e) =>
+            setDateFilter({
+              ...dateFilter,
+              from_date:
+                e.target.value
+            })
+          }
+          className="border p-2 rounded"
+        />
+
+        <input
+          type="date"
+          value={dateFilter.to_date}
+          onChange={(e) =>
+            setDateFilter({
+              ...dateFilter,
+              to_date:
+                e.target.value
+            })
+          }
+          className="border p-2 rounded"
+        />
+
+        <button
+          type="button"
+          onClick={downloadCSV}
+          className="bg-green-600 text-white px-4 py-2 rounded"
+        >
+          Download CSV
+        </button>
+
+      </div>
+
       <div className="overflow-x-auto">
 
         <table className="w-full border border-collapse text-sm">
@@ -675,7 +885,11 @@ export default function OutwardPage() {
                   <tr key={index}>
 
                     <td className="border p-2">
-                      {item.req_date}
+                      {
+                        formatDate(
+                          item.req_date
+                        )
+                      }
                     </td>
 
                     <td className="border p-2">
@@ -732,7 +946,9 @@ export default function OutwardPage() {
 
                     <td className="border p-2">
                       {
-                        item.issuance_date
+                        formatDate(
+                          item.issuance_date
+                        )
                       }
                     </td>
 
