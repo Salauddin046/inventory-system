@@ -4,94 +4,148 @@ import { useEffect, useState } from "react";
 
 export default function CatMasterPage() {
 
-  const [materials, setMaterials] = useState<any[]>([]);
+  const [materials, setMaterials] =
+    useState<any[]>([]);
 
-  const [filters, setFilters] = useState({
-    vendor_name: "",
-    material_code: "",
-    description: "",
-    type_of_material: ""
-  });
+  const [search, setSearch] =
+    useState("");
 
-  const [form, setForm] = useState({
-    vendor_name: "",
-    material_code: "",
-    description: "",
-    type_of_material: ""
-  });
+  const [formData, setFormData] =
+    useState({
 
-  async function loadMaterials() {
+      material_code: "",
 
-    const res = await fetch("/api/materials", {
-      cache: "no-store"
+      description: "",
+
+      uom: "",
+
+      req_person: "",
+
+      vendor_or_dept: ""
+
     });
-
-    const data = await res.json();
-
-    setMaterials(data);
-  }
 
   useEffect(() => {
 
-    loadMaterials();
+    fetchMaterials();
 
   }, []);
 
-  async function handleSubmit(e: any) {
+  async function fetchMaterials() {
 
-    e.preventDefault();
+    try {
 
-    await fetch("/api/materials", {
+      const response =
+        await fetch(
+          "/api/materials",
+          {
+            cache: "no-store"
+          }
+        );
 
-      method: "POST",
+      const result =
+        await response.json();
 
-      headers: {
-        "Content-Type": "application/json"
-      },
+      setMaterials(
+        Array.isArray(result)
+          ? result
+          : []
+      );
 
-      body: JSON.stringify(form)
+    } catch (error) {
 
-    });
+      console.log(error);
 
-    setForm({
-      vendor_name: "",
-      material_code: "",
-      description: "",
-      type_of_material: ""
-    });
+    }
 
-    loadMaterials();
   }
 
-  const filteredMaterials = materials.filter((item: any) => {
+  async function saveMaterial() {
 
-    return (
+    try {
 
-      item.vendor_name
-        ?.toLowerCase()
-        .includes(filters.vendor_name.toLowerCase())
+      const response =
+        await fetch(
+          "/api/materials",
+          {
 
-      &&
+            method: "POST",
 
-      item.material_code
-        ?.toLowerCase()
-        .includes(filters.material_code.toLowerCase())
+            headers: {
+              "Content-Type":
+                "application/json"
+            },
 
-      &&
+            body:
+              JSON.stringify(formData)
 
-      item.description
-        ?.toLowerCase()
-        .includes(filters.description.toLowerCase())
+          }
+        );
 
-      &&
+      const result =
+        await response.json();
 
-      item.type_of_material
-        ?.toLowerCase()
-        .includes(filters.type_of_material.toLowerCase())
+      if (result.success) {
+
+        alert(
+          "Material Added Successfully"
+        );
+
+        setFormData({
+
+          material_code: "",
+
+          description: "",
+
+          uom: "",
+
+          req_person: "",
+
+          vendor_or_dept: ""
+
+        });
+
+        fetchMaterials();
+
+      }
+
+    } catch (error) {
+
+      console.log(error);
+
+    }
+
+  }
+
+  const filteredData =
+    materials.filter(
+      (item: any) =>
+
+        item.material_code
+          ?.toLowerCase()
+          .includes(
+            search.toLowerCase()
+          ) ||
+
+        item.description
+          ?.toLowerCase()
+          .includes(
+            search.toLowerCase()
+          ) ||
+
+        item.req_person
+          ?.toLowerCase()
+          .includes(
+            search.toLowerCase()
+          ) ||
+
+        item.vendor_or_dept
+          ?.toLowerCase()
+          .includes(
+            search.toLowerCase()
+          )
 
     );
-
-  });
 
   return (
 
@@ -101,99 +155,148 @@ export default function CatMasterPage() {
         CAT Master
       </h1>
 
-      <form
-        onSubmit={handleSubmit}
-        className="grid grid-cols-4 gap-4 mb-6"
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+
+        <div>
+
+          <label className="block mb-1 font-medium">
+            Material Code
+          </label>
+
+          <input
+            type="text"
+            value={formData.material_code}
+            onChange={(e) =>
+              setFormData({
+                ...formData,
+                material_code:
+                  e.target.value
+              })
+            }
+            className="border p-2 rounded w-full"
+          />
+
+        </div>
+
+        <div>
+
+          <label className="block mb-1 font-medium">
+            Description
+          </label>
+
+          <input
+            type="text"
+            value={formData.description}
+            onChange={(e) =>
+              setFormData({
+                ...formData,
+                description:
+                  e.target.value
+              })
+            }
+            className="border p-2 rounded w-full"
+          />
+
+        </div>
+
+        <div>
+
+          <label className="block mb-1 font-medium">
+            UOM
+          </label>
+
+          <input
+            type="text"
+            value={formData.uom}
+            onChange={(e) =>
+              setFormData({
+                ...formData,
+                uom:
+                  e.target.value
+              })
+            }
+            className="border p-2 rounded w-full"
+          />
+
+        </div>
+
+        <div>
+
+          <label className="block mb-1 font-medium">
+            Req Person
+          </label>
+
+          <input
+            type="text"
+            value={formData.req_person}
+            onChange={(e) =>
+              setFormData({
+                ...formData,
+                req_person:
+                  e.target.value
+              })
+            }
+            className="border p-2 rounded w-full"
+          />
+
+        </div>
+
+        <div>
+
+          <label className="block mb-1 font-medium">
+            Vendor / Dept
+          </label>
+
+          <input
+            type="text"
+            value={
+              formData.vendor_or_dept
+            }
+            onChange={(e) =>
+              setFormData({
+                ...formData,
+                vendor_or_dept:
+                  e.target.value
+              })
+            }
+            className="border p-2 rounded w-full"
+          />
+
+        </div>
+
+      </div>
+
+      <button
+        type="button"
+        onClick={saveMaterial}
+        className="bg-blue-600 text-white px-6 py-2 rounded mb-6"
       >
+        Save Material
+      </button>
+
+      <div className="flex justify-end mb-4">
 
         <input
           type="text"
-          placeholder="Vendor Name"
-          value={form.vendor_name}
+          placeholder="Search"
+          value={search}
           onChange={(e) =>
-            setForm({
-              ...form,
-              vendor_name: e.target.value
-            })
+            setSearch(
+              e.target.value
+            )
           }
-          className="border p-2 rounded"
+          className="border p-2 rounded w-80"
         />
 
-        <input
-          type="text"
-          placeholder="Material Code"
-          value={form.material_code}
-          onChange={(e) =>
-            setForm({
-              ...form,
-              material_code: e.target.value
-            })
-          }
-          className="border p-2 rounded"
-        />
-
-        <input
-          type="text"
-          placeholder="Description"
-          value={form.description}
-          onChange={(e) =>
-            setForm({
-              ...form,
-              description: e.target.value
-            })
-          }
-          className="border p-2 rounded"
-        />
-
-        <select
-          value={form.type_of_material}
-          onChange={(e) =>
-            setForm({
-              ...form,
-              type_of_material: e.target.value
-            })
-          }
-          className="border p-2 rounded"
-        >
-
-          <option value="">
-            Select Type Of Material
-          </option>
-
-          <option value="AH">
-            AH
-          </option>
-
-          <option value="PH">
-            PH
-          </option>
-
-          <option value="MH">
-            MH
-          </option>
-
-        </select>
-
-        <button
-          type="submit"
-          className="bg-black text-white p-2 rounded col-span-4"
-        >
-          Save Material
-        </button>
-
-      </form>
+      </div>
 
       <div className="overflow-x-auto">
 
-        <table className="w-full border border-collapse">
+        <table className="w-full border border-collapse text-sm">
 
           <thead>
 
             <tr className="bg-gray-200">
-
-              <th className="border p-2">
-                Vendor Name
-              </th>
 
               <th className="border p-2">
                 Material Code
@@ -204,79 +307,15 @@ export default function CatMasterPage() {
               </th>
 
               <th className="border p-2">
-                Type Of Material
+                UOM
               </th>
 
-            </tr>
-
-            <tr className="bg-gray-100">
-
-              <th className="border p-1">
-
-                <input
-                  type="text"
-                  placeholder="Filter Vendor"
-                  value={filters.vendor_name}
-                  onChange={(e) =>
-                    setFilters({
-                      ...filters,
-                      vendor_name: e.target.value
-                    })
-                  }
-                  className="w-full p-1 border rounded"
-                />
-
+              <th className="border p-2">
+                Req Person
               </th>
 
-              <th className="border p-1">
-
-                <input
-                  type="text"
-                  placeholder="Filter Material"
-                  value={filters.material_code}
-                  onChange={(e) =>
-                    setFilters({
-                      ...filters,
-                      material_code: e.target.value
-                    })
-                  }
-                  className="w-full p-1 border rounded"
-                />
-
-              </th>
-
-              <th className="border p-1">
-
-                <input
-                  type="text"
-                  placeholder="Filter Description"
-                  value={filters.description}
-                  onChange={(e) =>
-                    setFilters({
-                      ...filters,
-                      description: e.target.value
-                    })
-                  }
-                  className="w-full p-1 border rounded"
-                />
-
-              </th>
-
-              <th className="border p-1">
-
-                <input
-                  type="text"
-                  placeholder="Filter Type"
-                  value={filters.type_of_material}
-                  onChange={(e) =>
-                    setFilters({
-                      ...filters,
-                      type_of_material: e.target.value
-                    })
-                  }
-                  className="w-full p-1 border rounded"
-                />
-
+              <th className="border p-2">
+                Vendor / Dept
               </th>
 
             </tr>
@@ -285,32 +324,46 @@ export default function CatMasterPage() {
 
           <tbody>
 
-            {filteredMaterials.map((item: any) => (
+            {filteredData.map(
+              (
+                item: any,
+                index: number
+              ) => (
 
-              <tr
-                key={item.id}
-                className="hover:bg-gray-50"
-              >
+                <tr key={index}>
 
-                <td className="border p-2">
-                  {item.vendor_name}
-                </td>
+                  <td className="border p-2">
+                    {
+                      item.material_code
+                    }
+                  </td>
 
-                <td className="border p-2">
-                  {item.material_code}
-                </td>
+                  <td className="border p-2">
+                    {
+                      item.description
+                    }
+                  </td>
 
-                <td className="border p-2">
-                  {item.description}
-                </td>
+                  <td className="border p-2">
+                    {item.uom}
+                  </td>
 
-                <td className="border p-2">
-                  {item.type_of_material}
-                </td>
+                  <td className="border p-2">
+                    {
+                      item.req_person
+                    }
+                  </td>
 
-              </tr>
+                  <td className="border p-2">
+                    {
+                      item.vendor_or_dept
+                    }
+                  </td>
 
-            ))}
+                </tr>
+
+              )
+            )}
 
           </tbody>
 
