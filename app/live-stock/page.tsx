@@ -129,63 +129,59 @@ export default function LiveStockPage() {
               (
                 item: any,
                 index: number
-              ) => {
+              ) => (
 
-                const inwardQty =
-                  Number(
-                    item.total_inward || 0
-                  );
+                <tr key={index}>
 
-                const outwardQty =
-                  Number(
-                    item.total_outward || 0
-                  );
+                  <td className="border p-2 font-bold">
+                    {
+                      item.material_code
+                    }
+                  </td>
 
-                const projectionQty =
-                  Number(
-                    item.projection_qty || 0
-                  );
+                  <td className="border p-2">
+                    {
+                      item.description
+                    }
+                  </td>
 
-                const liveStock =
-                  inwardQty -
-                  outwardQty -
-                  projectionQty;
+                  <td className="border p-2 text-green-600 font-bold">
+                    {
+                      Number(
+                        item.inward_qty || 0
+                      )
+                    }
+                  </td>
 
-                return (
+                  <td className="border p-2 text-red-600 font-bold">
+                    {
+                      Number(
+                        item.outward_qty || 0
+                      )
+                    }
+                  </td>
 
-                  <tr key={index}>
+                  <td className="border p-2 text-blue-600 font-bold">
+                    {
+                      Number(
+                        item.projection_qty || 0
+                      )
+                    }
+                  </td>
 
-                    <td className="border p-2 font-bold">
-                      {item.material_code}
-                    </td>
+                  <td className="border p-2 font-bold">
 
-                    <td className="border p-2">
-                      {item.description}
-                    </td>
+                    {
+                      Number(
+                        item.live_stock || 0
+                      )
+                    }
 
-                    <td className="border p-2 text-green-600 font-bold">
-                      {inwardQty}
-                    </td>
+                  </td>
 
-                    <td className="border p-2 text-red-600 font-bold">
-                      {outwardQty}
-                    </td>
+                </tr>
 
-                    <td className="border p-2 text-blue-600 font-bold">
-                      {projectionQty}
-                    </td>
-
-                    <td className="border p-2 font-bold">
-
-                      {liveStock}
-
-                    </td>
-
-                  </tr>
-
-                );
-
-              }
+              )
             )}
 
           </tbody>
