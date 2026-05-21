@@ -31,6 +31,12 @@ export default function OutwardPage() {
   const [materials, setMaterials] =
     useState<any[]>([]);
 
+  const [reqPersons, setReqPersons] =
+    useState<any[]>([]);
+
+  const [vendorDepts, setVendorDepts] =
+    useState<any[]>([]);
+
   const [dateFilter, setDateFilter] =
     useState({
       from_date: "",
@@ -114,6 +120,34 @@ export default function OutwardPage() {
           : []
       );
 
+      const reqRes =
+        await fetch(
+          "/api/req-person"
+        );
+
+      const reqJson =
+        await reqRes.json();
+
+      setReqPersons(
+        Array.isArray(reqJson)
+          ? reqJson
+          : []
+      );
+
+      const vendorRes =
+        await fetch(
+          "/api/vendor-dept"
+        );
+
+      const vendorJson =
+        await vendorRes.json();
+
+      setVendorDepts(
+        Array.isArray(vendorJson)
+          ? vendorJson
+          : []
+      );
+
     } catch (error) {
 
       console.log(error);
@@ -143,7 +177,54 @@ export default function OutwardPage() {
             },
 
             body:
-              JSON.stringify(form)
+              JSON.stringify({
+
+                req_date:
+                  form.req_date,
+
+                month:
+                  form.month,
+
+                req_person:
+                  form.req_person,
+
+                to_vendor_dept:
+                  form.to_vendor_dept,
+
+                job_card_po_no:
+                  form.job_card_po_no,
+
+                material_code:
+                  form.material_code,
+
+                material_description:
+                  form.description,
+
+                type_of_material:
+                  "",
+
+                req_qty:
+                  form.req_qty,
+
+                g_outward_qty:
+                  form.g_outward_qty,
+
+                ng_outward_qty:
+                  form.ng_outward_qty,
+
+                uom:
+                  form.uom,
+
+                issuance_date:
+                  form.issuance_date,
+
+                tally_ref_no:
+                  form.tally_ref_no,
+
+                remarks:
+                  form.remarks
+
+              })
 
           }
         );
@@ -158,6 +239,50 @@ export default function OutwardPage() {
         );
 
         fetchData();
+
+        setForm({
+
+          req_date:
+            formattedDate,
+
+          month:
+            currentMonth +
+            " " +
+            currentYear,
+
+          req_person: "",
+
+          to_vendor_dept: "",
+
+          job_card_po_no: "",
+
+          material_code: "",
+
+          description: "",
+
+          req_qty: "",
+
+          g_outward_qty: "",
+
+          ng_outward_qty: "",
+
+          uom: "",
+
+          issuance_date:
+            formattedDate,
+
+          tally_ref_no: "",
+
+          remarks: ""
+
+        });
+
+      } else {
+
+        alert(
+          result.error ||
+          "Save Failed"
+        );
 
       }
 
@@ -190,134 +315,12 @@ export default function OutwardPage() {
         description:
           selected.description || "",
 
-        uom: "Nos"
+        uom:
+          selected.uom || "Nos"
 
       });
 
     }
-
-  }
-
-  function downloadCSV() {
-
-    const filteredRows =
-      outwardData.filter(
-        (item: any) => {
-
-          if (
-            !dateFilter.from_date ||
-            !dateFilter.to_date
-          ) {
-            return true;
-          }
-
-          const rowDate =
-            new Date(item.req_date);
-
-          const fromDate =
-            new Date(
-              dateFilter.from_date
-            );
-
-          const toDate =
-            new Date(
-              dateFilter.to_date
-            );
-
-          return (
-            rowDate >= fromDate &&
-            rowDate <= toDate
-          );
-
-        }
-      );
-
-    const headers = [
-
-      "Req Date",
-      "Month",
-      "Req Person",
-      "Vendor / Dept",
-      "Job Card",
-      "Material Code",
-      "Description",
-      "Req Qty",
-      "G Qty",
-      "NG Qty",
-      "UOM",
-      "Issuance Date",
-      "Tally Ref",
-      "Remarks"
-
-    ];
-
-    const rows =
-      filteredRows.map(
-        (item: any) => [
-
-          item.req_date,
-          item.month,
-          item.req_person,
-          item.to_vendor_dept,
-          item.job_card_po_no,
-          item.material_code,
-          item.description,
-          item.req_qty,
-          item.g_outward_qty,
-          item.ng_outward_qty,
-          item.uom,
-          item.issuance_date,
-          item.tally_ref_no,
-          item.remarks
-
-        ]
-      );
-
-    const csvContent = [
-
-      headers.join(","),
-
-      ...rows.map(
-        (e: any) =>
-          e.join(",")
-      )
-
-    ].join("\n");
-
-    const blob =
-      new Blob(
-        [csvContent],
-        {
-          type:
-            "text/csv;charset=utf-8;"
-        }
-      );
-
-    const link =
-      document.createElement("a");
-
-    const url =
-      URL.createObjectURL(blob);
-
-    link.setAttribute(
-      "href",
-      url
-    );
-
-    link.setAttribute(
-      "download",
-      "outward_report.csv"
-    );
-
-    document.body.appendChild(
-      link
-    );
-
-    link.click();
-
-    document.body.removeChild(
-      link
-    );
 
   }
 
@@ -370,24 +373,16 @@ export default function OutwardPage() {
             Select Req Person
           </option>
 
-          {[
-            ...new Set(
-              materials.map(
-                (item: any) =>
-                  item.req_person
-              )
-            )
-          ].map(
-            (
-              person: any,
-              index
-            ) => (
+          {reqPersons.map(
+            (item: any) => (
 
               <option
-                key={index}
-                value={person}
+                key={item.id}
+                value={
+                  item.req_person
+                }
               >
-                {person}
+                {item.req_person}
               </option>
 
             )
@@ -411,24 +406,16 @@ export default function OutwardPage() {
             Select Vendor / Dept
           </option>
 
-          {[
-            ...new Set(
-              materials.map(
-                (item: any) =>
-                  item.vendor_name
-              )
-            )
-          ].map(
-            (
-              vendor: any,
-              index
-            ) => (
+          {vendorDepts.map(
+            (item: any) => (
 
               <option
-                key={index}
-                value={vendor}
+                key={item.id}
+                value={
+                  item.vendor_dept
+                }
               >
-                {vendor}
+                {item.vendor_dept}
               </option>
 
             )
@@ -543,7 +530,6 @@ export default function OutwardPage() {
           type="date"
           value={form.issuance_date}
           readOnly
-          disabled
           className="border p-2 rounded bg-gray-100"
         />
 
@@ -583,44 +569,6 @@ export default function OutwardPage() {
         </button>
 
       </form>
-
-      <div className="flex gap-4 mb-4">
-
-        <input
-          type="date"
-          value={dateFilter.from_date}
-          onChange={(e) =>
-            setDateFilter({
-              ...dateFilter,
-              from_date:
-                e.target.value
-            })
-          }
-          className="border p-2 rounded"
-        />
-
-        <input
-          type="date"
-          value={dateFilter.to_date}
-          onChange={(e) =>
-            setDateFilter({
-              ...dateFilter,
-              to_date:
-                e.target.value
-            })
-          }
-          className="border p-2 rounded"
-        />
-
-        <button
-          type="button"
-          onClick={downloadCSV}
-          className="bg-green-600 text-white px-4 py-2 rounded"
-        >
-          Download CSV
-        </button>
-
-      </div>
 
       <div className="overflow-x-auto">
 
@@ -725,7 +673,9 @@ export default function OutwardPage() {
                   </td>
 
                   <td className="border p-2">
-                    {item.description}
+                    {
+                      item.material_description
+                    }
                   </td>
 
                   <td className="border p-2">
