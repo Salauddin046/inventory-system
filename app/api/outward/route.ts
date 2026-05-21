@@ -7,14 +7,18 @@ export async function GET() {
 
     const data =
       await sql`
+
         SELECT *
+
         FROM outward_transactions
+
         ORDER BY id DESC
+
       `;
 
     return NextResponse.json(data);
 
-  } catch (error) {
+  } catch (error: any) {
 
     console.log(error);
 
@@ -37,46 +41,68 @@ export async function POST(
 
       INSERT INTO outward_transactions
       (
-        req_date,
+
+        outward_date,
+
         month,
+
         req_person,
+
+        vendor_dept,
+
         type_of_outward,
-        to_vendor_dept,
-        job_card_po_no,
+
         material_code,
-        description,
-        req_qty,
+
+        material_description,
+
+        type_of_material,
+
         g_outward_qty,
+
         ng_outward_qty,
+
         uom,
-        issuance_date,
-        tally_ref_no,
+
         remarks
+
       )
 
       VALUES
       (
-        ${body.req_date},
+
+        ${body.outward_date},
+
         ${body.month},
+
         ${body.req_person},
+
+        ${body.vendor_dept},
+
         ${body.type_of_outward},
-        ${body.to_vendor_dept},
-        ${body.job_card_po_no},
+
         ${body.material_code},
-        ${body.description},
-        ${body.req_qty},
+
+        ${body.material_description},
+
+        ${body.type_of_material},
+
         ${body.g_outward_qty},
+
         ${body.ng_outward_qty},
+
         ${body.uom},
-        ${body.issuance_date},
-        ${body.tally_ref_no},
+
         ${body.remarks}
+
       )
 
     `;
 
     return NextResponse.json({
+
       success: true
+
     });
 
   } catch (error: any) {
@@ -84,8 +110,11 @@ export async function POST(
     console.log(error);
 
     return NextResponse.json({
+
       success: false,
+
       error: error.message
+
     });
 
   }
