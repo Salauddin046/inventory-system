@@ -7,6 +7,12 @@ export default function CatMasterPage() {
   const [materials, setMaterials] =
     useState<any[]>([]);
 
+  const [reqPersons, setReqPersons] =
+    useState<any[]>([]);
+
+  const [vendorDepts, setVendorDepts] =
+    useState<any[]>([]);
+
   const [materialData, setMaterialData] =
     useState({
 
@@ -30,6 +36,10 @@ export default function CatMasterPage() {
 
     fetchMaterials();
 
+    fetchReqPersons();
+
+    fetchVendorDepts();
+
   }, []);
 
   async function fetchMaterials() {
@@ -48,6 +58,56 @@ export default function CatMasterPage() {
         await response.json();
 
       setMaterials(result || []);
+
+    } catch (error) {
+
+      console.log(error);
+
+    }
+
+  }
+
+  async function fetchReqPersons() {
+
+    try {
+
+      const response =
+        await fetch(
+          "/api/req-person",
+          {
+            cache: "no-store"
+          }
+        );
+
+      const result =
+        await response.json();
+
+      setReqPersons(result || []);
+
+    } catch (error) {
+
+      console.log(error);
+
+    }
+
+  }
+
+  async function fetchVendorDepts() {
+
+    try {
+
+      const response =
+        await fetch(
+          "/api/vendor-dept",
+          {
+            cache: "no-store"
+          }
+        );
+
+      const result =
+        await response.json();
+
+      setVendorDepts(result || []);
 
     } catch (error) {
 
@@ -84,9 +144,7 @@ export default function CatMasterPage() {
 
       if (result.success) {
 
-        alert(
-          "Material Saved"
-        );
+        alert("Material Saved");
 
         setMaterialData({
 
@@ -116,33 +174,43 @@ export default function CatMasterPage() {
 
     try {
 
-      await fetch(
-        "/api/req-person",
-        {
+      const response =
+        await fetch(
+          "/api/req-person",
+          {
 
-          method: "POST",
+            method: "POST",
 
-          headers: {
-            "Content-Type":
-              "application/json"
-          },
+            headers: {
+              "Content-Type":
+                "application/json"
+            },
 
-          body:
-            JSON.stringify({
+            body:
+              JSON.stringify({
 
-              req_person:
-                reqPerson
+                req_person:
+                  reqPerson
 
-            })
+              })
 
-        }
-      );
+          }
+        );
 
-      alert(
-        "Req Person Saved"
-      );
+      const result =
+        await response.json();
 
-      setReqPerson("");
+      if (result.success) {
+
+        alert(
+          "Req Person Saved"
+        );
+
+        setReqPerson("");
+
+        fetchReqPersons();
+
+      }
 
     } catch (error) {
 
@@ -156,33 +224,43 @@ export default function CatMasterPage() {
 
     try {
 
-      await fetch(
-        "/api/vendor-dept",
-        {
+      const response =
+        await fetch(
+          "/api/vendor-dept",
+          {
 
-          method: "POST",
+            method: "POST",
 
-          headers: {
-            "Content-Type":
-              "application/json"
-          },
+            headers: {
+              "Content-Type":
+                "application/json"
+            },
 
-          body:
-            JSON.stringify({
+            body:
+              JSON.stringify({
 
-              vendor_dept:
-                vendorDept
+                vendor_dept:
+                  vendorDept
 
-            })
+              })
 
-        }
-      );
+          }
+        );
 
-      alert(
-        "Vendor / Dept Saved"
-      );
+      const result =
+        await response.json();
 
-      setVendorDept("");
+      if (result.success) {
+
+        alert(
+          "Vendor / Dept Saved"
+        );
+
+        setVendorDept("");
+
+        fetchVendorDepts();
+
+      }
 
     } catch (error) {
 
@@ -363,77 +441,164 @@ export default function CatMasterPage() {
 
       </div>
 
-      <div className="bg-white rounded shadow mt-8 overflow-x-auto">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
 
-        <table className="w-full border-collapse text-sm">
+        <div className="bg-white rounded shadow overflow-x-auto">
 
-          <thead>
+          <table className="w-full border-collapse text-sm">
 
-            <tr className="bg-gray-200">
+            <thead>
 
-              <th className="border p-3">
-                Material Code
-              </th>
+              <tr className="bg-gray-200">
 
-              <th className="border p-3">
-                Description
-              </th>
+                <th className="border p-3">
+                  Material Code
+                </th>
 
-              <th className="border p-3">
-                Type
-              </th>
+                <th className="border p-3">
+                  Description
+                </th>
 
-              <th className="border p-3">
-                UOM
-              </th>
+                <th className="border p-3">
+                  Type
+                </th>
 
-            </tr>
+                <th className="border p-3">
+                  UOM
+                </th>
 
-          </thead>
+              </tr>
 
-          <tbody>
+            </thead>
 
-            {materials.map(
-              (
-                item: any,
-                index: number
-              ) => (
+            <tbody>
 
-                <tr
-                  key={index}
-                  className="hover:bg-gray-50"
-                >
+              {materials.map(
+                (
+                  item: any,
+                  index: number
+                ) => (
 
-                  <td className="border p-2">
-                    {
-                      item.material_code
-                    }
-                  </td>
+                  <tr key={index}>
 
-                  <td className="border p-2">
-                    {
-                      item.description
-                    }
-                  </td>
+                    <td className="border p-2">
+                      {
+                        item.material_code
+                      }
+                    </td>
 
-                  <td className="border p-2">
-                    {
-                      item.type_of_material
-                    }
-                  </td>
+                    <td className="border p-2">
+                      {
+                        item.description
+                      }
+                    </td>
 
-                  <td className="border p-2">
-                    {item.uom}
-                  </td>
+                    <td className="border p-2">
+                      {
+                        item.type_of_material
+                      }
+                    </td>
 
-                </tr>
+                    <td className="border p-2">
+                      {item.uom}
+                    </td>
 
-              )
-            )}
+                  </tr>
 
-          </tbody>
+                )
+              )}
 
-        </table>
+            </tbody>
+
+          </table>
+
+        </div>
+
+        <div className="bg-white rounded shadow overflow-x-auto">
+
+          <table className="w-full border-collapse text-sm">
+
+            <thead>
+
+              <tr className="bg-green-200">
+
+                <th className="border p-3">
+                  Req Person
+                </th>
+
+              </tr>
+
+            </thead>
+
+            <tbody>
+
+              {reqPersons.map(
+                (
+                  item: any,
+                  index: number
+                ) => (
+
+                  <tr key={index}>
+
+                    <td className="border p-2">
+                      {
+                        item.req_person
+                      }
+                    </td>
+
+                  </tr>
+
+                )
+              )}
+
+            </tbody>
+
+          </table>
+
+        </div>
+
+        <div className="bg-white rounded shadow overflow-x-auto">
+
+          <table className="w-full border-collapse text-sm">
+
+            <thead>
+
+              <tr className="bg-purple-200">
+
+                <th className="border p-3">
+                  Vendor / Dept
+                </th>
+
+              </tr>
+
+            </thead>
+
+            <tbody>
+
+              {vendorDepts.map(
+                (
+                  item: any,
+                  index: number
+                ) => (
+
+                  <tr key={index}>
+
+                    <td className="border p-2">
+                      {
+                        item.vendor_dept
+                      }
+                    </td>
+
+                  </tr>
+
+                )
+              )}
+
+            </tbody>
+
+          </table>
+
+        </div>
 
       </div>
 
