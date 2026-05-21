@@ -12,9 +12,8 @@ export async function GET() {
           id,
           material_code,
           description,
-          uom,
-          req_person,
-          vendor_or_dept
+          type_of_material,
+          uom
 
         FROM material_master
 
@@ -43,26 +42,22 @@ export async function POST(
     const body =
       await request.json();
 
-    console.log(body);
-
     await sql`
 
       INSERT INTO material_master
       (
         material_code,
         description,
-        uom,
-        req_person,
-        vendor_or_dept
+        type_of_material,
+        uom
       )
 
       VALUES
       (
         ${body.material_code},
         ${body.description},
-        ${body.uom},
-        ${body.req_person},
-        ${body.vendor_or_dept}
+        ${body.type_of_material},
+        ${body.uom}
       )
 
     `;

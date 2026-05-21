@@ -1,8 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function CatMasterPage() {
+
+  const [materials, setMaterials] =
+    useState<any[]>([]);
 
   const [materialData, setMaterialData] =
     useState({
@@ -23,78 +26,169 @@ export default function CatMasterPage() {
   const [vendorDept, setVendorDept] =
     useState("");
 
+  useEffect(() => {
+
+    fetchMaterials();
+
+  }, []);
+
+  async function fetchMaterials() {
+
+    try {
+
+      const response =
+        await fetch(
+          "/api/materials",
+          {
+            cache: "no-store"
+          }
+        );
+
+      const result =
+        await response.json();
+
+      setMaterials(result || []);
+
+    } catch (error) {
+
+      console.log(error);
+
+    }
+
+  }
+
   async function saveMaterial() {
 
-    await fetch(
-      "/api/materials",
-      {
+    try {
 
-        method: "POST",
+      const response =
+        await fetch(
+          "/api/materials",
+          {
 
-        headers: {
-          "Content-Type":
-            "application/json"
-        },
+            method: "POST",
 
-        body:
-          JSON.stringify(materialData)
+            headers: {
+              "Content-Type":
+                "application/json"
+            },
+
+            body:
+              JSON.stringify(materialData)
+
+          }
+        );
+
+      const result =
+        await response.json();
+
+      if (result.success) {
+
+        alert(
+          "Material Saved"
+        );
+
+        setMaterialData({
+
+          material_code: "",
+
+          description: "",
+
+          type_of_material: "",
+
+          uom: ""
+
+        });
+
+        fetchMaterials();
 
       }
-    );
 
-    alert("Material Saved");
+    } catch (error) {
+
+      console.log(error);
+
+    }
 
   }
 
   async function saveReqPerson() {
 
-    await fetch(
-      "/api/req-person",
-      {
+    try {
 
-        method: "POST",
+      await fetch(
+        "/api/req-person",
+        {
 
-        headers: {
-          "Content-Type":
-            "application/json"
-        },
+          method: "POST",
 
-        body:
-          JSON.stringify({
-            req_person:
-              reqPerson
-          })
+          headers: {
+            "Content-Type":
+              "application/json"
+          },
 
-      }
-    );
+          body:
+            JSON.stringify({
 
-    alert("Req Person Saved");
+              req_person:
+                reqPerson
+
+            })
+
+        }
+      );
+
+      alert(
+        "Req Person Saved"
+      );
+
+      setReqPerson("");
+
+    } catch (error) {
+
+      console.log(error);
+
+    }
 
   }
 
   async function saveVendorDept() {
 
-    await fetch(
-      "/api/vendor-dept",
-      {
+    try {
 
-        method: "POST",
+      await fetch(
+        "/api/vendor-dept",
+        {
 
-        headers: {
-          "Content-Type":
-            "application/json"
-        },
+          method: "POST",
 
-        body:
-          JSON.stringify({
-            vendor_dept:
-              vendorDept
-          })
+          headers: {
+            "Content-Type":
+              "application/json"
+          },
 
-      }
-    );
+          body:
+            JSON.stringify({
 
-    alert("Vendor / Dept Saved");
+              vendor_dept:
+                vendorDept
+
+            })
+
+        }
+      );
+
+      alert(
+        "Vendor / Dept Saved"
+      );
+
+      setVendorDept("");
+
+    } catch (error) {
+
+      console.log(error);
+
+    }
 
   }
 
@@ -266,6 +360,80 @@ export default function CatMasterPage() {
           </button>
 
         </div>
+
+      </div>
+
+      <div className="bg-white rounded shadow mt-8 overflow-x-auto">
+
+        <table className="w-full border-collapse text-sm">
+
+          <thead>
+
+            <tr className="bg-gray-200">
+
+              <th className="border p-3">
+                Material Code
+              </th>
+
+              <th className="border p-3">
+                Description
+              </th>
+
+              <th className="border p-3">
+                Type
+              </th>
+
+              <th className="border p-3">
+                UOM
+              </th>
+
+            </tr>
+
+          </thead>
+
+          <tbody>
+
+            {materials.map(
+              (
+                item: any,
+                index: number
+              ) => (
+
+                <tr
+                  key={index}
+                  className="hover:bg-gray-50"
+                >
+
+                  <td className="border p-2">
+                    {
+                      item.material_code
+                    }
+                  </td>
+
+                  <td className="border p-2">
+                    {
+                      item.description
+                    }
+                  </td>
+
+                  <td className="border p-2">
+                    {
+                      item.type_of_material
+                    }
+                  </td>
+
+                  <td className="border p-2">
+                    {item.uom}
+                  </td>
+
+                </tr>
+
+              )
+            )}
+
+          </tbody>
+
+        </table>
 
       </div>
 
