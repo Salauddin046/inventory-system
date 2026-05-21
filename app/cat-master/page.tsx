@@ -88,7 +88,7 @@ export default function CatMasterPage() {
       if (result.success) {
 
         alert(
-          "Material Added Successfully"
+          "Material Saved Successfully"
         );
 
         setFormData({
@@ -106,6 +106,13 @@ export default function CatMasterPage() {
         });
 
         fetchMaterials();
+
+      } else {
+
+        alert(
+          result.error ||
+          "Failed To Save"
+        );
 
       }
 
@@ -155,16 +162,17 @@ export default function CatMasterPage() {
         CAT Master
       </h1>
 
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
 
         <div>
 
-          <label className="block mb-1 font-medium">
+          <label className="block text-sm font-medium mb-1">
             Material Code
           </label>
 
           <input
             type="text"
+            placeholder="Enter Material Code"
             value={formData.material_code}
             onChange={(e) =>
               setFormData({
@@ -180,12 +188,13 @@ export default function CatMasterPage() {
 
         <div>
 
-          <label className="block mb-1 font-medium">
+          <label className="block text-sm font-medium mb-1">
             Description
           </label>
 
           <input
             type="text"
+            placeholder="Enter Description"
             value={formData.description}
             onChange={(e) =>
               setFormData({
@@ -201,12 +210,13 @@ export default function CatMasterPage() {
 
         <div>
 
-          <label className="block mb-1 font-medium">
+          <label className="block text-sm font-medium mb-1">
             UOM
           </label>
 
           <input
             type="text"
+            placeholder="Enter UOM"
             value={formData.uom}
             onChange={(e) =>
               setFormData({
@@ -222,12 +232,13 @@ export default function CatMasterPage() {
 
         <div>
 
-          <label className="block mb-1 font-medium">
+          <label className="block text-sm font-medium mb-1">
             Req Person
           </label>
 
           <input
             type="text"
+            placeholder="Enter Req Person"
             value={formData.req_person}
             onChange={(e) =>
               setFormData({
@@ -243,12 +254,13 @@ export default function CatMasterPage() {
 
         <div>
 
-          <label className="block mb-1 font-medium">
+          <label className="block text-sm font-medium mb-1">
             Vendor / Dept
           </label>
 
           <input
             type="text"
+            placeholder="Enter Vendor or Dept"
             value={
               formData.vendor_or_dept
             }

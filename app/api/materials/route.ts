@@ -8,7 +8,13 @@ export async function GET() {
     const data =
       await sql`
 
-        SELECT *
+        SELECT
+          id,
+          material_code,
+          description,
+          uom,
+          req_person,
+          vendor_or_dept
 
         FROM material_master
 
@@ -37,6 +43,8 @@ export async function POST(
     const body =
       await request.json();
 
+    console.log(body);
+
     await sql`
 
       INSERT INTO material_master
@@ -60,7 +68,9 @@ export async function POST(
     `;
 
     return NextResponse.json({
+
       success: true
+
     });
 
   } catch (error: any) {
