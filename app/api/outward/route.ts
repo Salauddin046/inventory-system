@@ -37,6 +37,8 @@ export async function POST(
     const body =
       await request.json();
 
+    console.log(body);
+
     await sql`
 
       INSERT INTO outward_transactions
@@ -87,9 +89,9 @@ export async function POST(
 
         ${body.type_of_material},
 
-        ${body.g_outward_qty},
+        ${Number(body.g_outward_qty || 0)},
 
-        ${body.ng_outward_qty},
+        ${Number(body.ng_outward_qty || 0)},
 
         ${body.uom},
 
