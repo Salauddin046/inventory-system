@@ -37,12 +37,6 @@ export default function OutwardPage() {
   const [vendorDepts, setVendorDepts] =
     useState<any[]>([]);
 
-  const [dateFilter, setDateFilter] =
-    useState({
-      from_date: "",
-      to_date: ""
-    });
-
   const [form, setForm] = useState({
 
     req_date: formattedDate,
@@ -81,11 +75,11 @@ export default function OutwardPage() {
 
   useEffect(() => {
 
-    fetchData();
+    fetchAllData();
 
   }, []);
 
-  async function fetchData() {
+  async function fetchAllData() {
 
     try {
 
@@ -100,11 +94,20 @@ export default function OutwardPage() {
       const outwardJson =
         await outwardRes.json();
 
-      setOutwardData(
-        Array.isArray(outwardJson)
-          ? outwardJson
-          : []
+      console.log(
+        "OUTWARD DATA",
+        outwardJson
       );
+
+      if (
+        Array.isArray(outwardJson)
+      ) {
+
+        setOutwardData(
+          outwardJson
+        );
+
+      }
 
       const materialRes =
         await fetch(
@@ -114,11 +117,15 @@ export default function OutwardPage() {
       const materialJson =
         await materialRes.json();
 
-      setMaterials(
+      if (
         Array.isArray(materialJson)
-          ? materialJson
-          : []
-      );
+      ) {
+
+        setMaterials(
+          materialJson
+        );
+
+      }
 
       const reqRes =
         await fetch(
@@ -128,11 +135,15 @@ export default function OutwardPage() {
       const reqJson =
         await reqRes.json();
 
-      setReqPersons(
+      if (
         Array.isArray(reqJson)
-          ? reqJson
-          : []
-      );
+      ) {
+
+        setReqPersons(
+          reqJson
+        );
+
+      }
 
       const vendorRes =
         await fetch(
@@ -142,11 +153,15 @@ export default function OutwardPage() {
       const vendorJson =
         await vendorRes.json();
 
-      setVendorDepts(
+      if (
         Array.isArray(vendorJson)
-          ? vendorJson
-          : []
-      );
+      ) {
+
+        setVendorDepts(
+          vendorJson
+        );
+
+      }
 
     } catch (error) {
 
@@ -204,13 +219,19 @@ export default function OutwardPage() {
                   "",
 
                 req_qty:
-                  form.req_qty,
+                  Number(
+                    form.req_qty || 0
+                  ),
 
                 g_outward_qty:
-                  form.g_outward_qty,
+                  Number(
+                    form.g_outward_qty || 0
+                  ),
 
                 ng_outward_qty:
-                  form.ng_outward_qty,
+                  Number(
+                    form.ng_outward_qty || 0
+                  ),
 
                 uom:
                   form.uom,
@@ -232,13 +253,15 @@ export default function OutwardPage() {
       const result =
         await response.json();
 
+      console.log(result);
+
       if (result.success) {
 
         alert(
           "Outward Saved Successfully"
         );
 
-        fetchData();
+        await fetchAllData();
 
         setForm({
 
@@ -640,75 +663,107 @@ export default function OutwardPage() {
 
           <tbody>
 
-            {outwardData.map(
-              (
-                item: any,
-                index: number
-              ) => (
+            {outwardData &&
+            outwardData.length > 0 ? (
 
-                <tr key={index}>
+              outwardData.map(
+                (
+                  item: any,
+                  index: number
+                ) => (
 
-                  <td className="border p-2">
-                    {item.req_date}
-                  </td>
+                  <tr key={index}>
 
-                  <td className="border p-2">
-                    {item.month}
-                  </td>
+                    <td className="border p-2">
+                      {item.req_date}
+                    </td>
 
-                  <td className="border p-2">
-                    {item.req_person}
-                  </td>
+                    <td className="border p-2">
+                      {item.month}
+                    </td>
 
-                  <td className="border p-2">
-                    {item.to_vendor_dept}
-                  </td>
+                    <td className="border p-2">
+                      {item.req_person}
+                    </td>
 
-                  <td className="border p-2">
-                    {item.job_card_po_no}
-                  </td>
+                    <td className="border p-2">
+                      {
+                        item.to_vendor_dept
+                      }
+                    </td>
 
-                  <td className="border p-2">
-                    {item.material_code}
-                  </td>
+                    <td className="border p-2">
+                      {
+                        item.job_card_po_no
+                      }
+                    </td>
 
-                  <td className="border p-2">
-                    {
-                      item.material_description
-                    }
-                  </td>
+                    <td className="border p-2">
+                      {
+                        item.material_code
+                      }
+                    </td>
 
-                  <td className="border p-2">
-                    {item.req_qty}
-                  </td>
+                    <td className="border p-2">
+                      {
+                        item.material_description
+                      }
+                    </td>
 
-                  <td className="border p-2">
-                    {item.g_outward_qty}
-                  </td>
+                    <td className="border p-2">
+                      {item.req_qty}
+                    </td>
 
-                  <td className="border p-2">
-                    {item.ng_outward_qty}
-                  </td>
+                    <td className="border p-2">
+                      {
+                        item.g_outward_qty
+                      }
+                    </td>
 
-                  <td className="border p-2">
-                    {item.uom}
-                  </td>
+                    <td className="border p-2">
+                      {
+                        item.ng_outward_qty
+                      }
+                    </td>
 
-                  <td className="border p-2">
-                    {item.issuance_date}
-                  </td>
+                    <td className="border p-2">
+                      {item.uom}
+                    </td>
 
-                  <td className="border p-2">
-                    {item.tally_ref_no}
-                  </td>
+                    <td className="border p-2">
+                      {
+                        item.issuance_date
+                      }
+                    </td>
 
-                  <td className="border p-2">
-                    {item.remarks}
-                  </td>
+                    <td className="border p-2">
+                      {
+                        item.tally_ref_no
+                      }
+                    </td>
 
-                </tr>
+                    <td className="border p-2">
+                      {item.remarks}
+                    </td>
 
+                  </tr>
+
+                )
               )
+
+            ) : (
+
+              <tr>
+
+                <td
+                  colSpan={14}
+                  className="border p-4 text-center"
+                >
+                  No Outward Data Found
+                </td>
+
+              </tr>
+
             )}
 
           </tbody>
