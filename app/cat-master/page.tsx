@@ -1,16 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 export default function CatMasterPage() {
 
-  const [materials, setMaterials] =
-    useState<any[]>([]);
-
-  const [search, setSearch] =
-    useState("");
-
-  const [formData, setFormData] =
+  const [materialData, setMaterialData] =
     useState({
 
       material_code: "",
@@ -19,423 +13,259 @@ export default function CatMasterPage() {
 
       type_of_material: "",
 
-      uom: "",
-
-      req_person: "",
-
-      vendor_or_dept: ""
+      uom: ""
 
     });
 
-  useEffect(() => {
+  const [reqPerson, setReqPerson] =
+    useState("");
 
-    fetchMaterials();
-
-  }, []);
-
-  async function fetchMaterials() {
-
-    try {
-
-      const response =
-        await fetch(
-          "/api/materials",
-          {
-            cache: "no-store"
-          }
-        );
-
-      const result =
-        await response.json();
-
-      setMaterials(
-        Array.isArray(result)
-          ? result
-          : []
-      );
-
-    } catch (error) {
-
-      console.log(error);
-
-    }
-
-  }
+  const [vendorDept, setVendorDept] =
+    useState("");
 
   async function saveMaterial() {
 
-    if (
-      !formData.material_code ||
-      !formData.description
-    ) {
+    await fetch(
+      "/api/materials",
+      {
 
-      alert(
-        "Enter Required Fields"
-      );
+        method: "POST",
 
-      return;
+        headers: {
+          "Content-Type":
+            "application/json"
+        },
 
-    }
-
-    try {
-
-      const response =
-        await fetch(
-          "/api/materials",
-          {
-
-            method: "POST",
-
-            headers: {
-              "Content-Type":
-                "application/json"
-            },
-
-            body:
-              JSON.stringify(formData)
-
-          }
-        );
-
-      const result =
-        await response.json();
-
-      if (result.success) {
-
-        alert(
-          "Material Saved Successfully"
-        );
-
-        setFormData({
-
-          material_code: "",
-
-          description: "",
-
-          type_of_material: "",
-
-          uom: "",
-
-          req_person: "",
-
-          vendor_or_dept: ""
-
-        });
-
-        fetchMaterials();
-
-      } else {
-
-        alert(
-          result.error ||
-          "Failed To Save"
-        );
+        body:
+          JSON.stringify(materialData)
 
       }
+    );
 
-    } catch (error) {
-
-      console.log(error);
-
-      alert(
-        "Error Saving Material"
-      );
-
-    }
+    alert("Material Saved");
 
   }
 
-  const filteredData =
-    materials.filter(
-      (item: any) =>
+  async function saveReqPerson() {
 
-        item.material_code
-          ?.toLowerCase()
-          .includes(
-            search.toLowerCase()
-          ) ||
+    await fetch(
+      "/api/req-person",
+      {
 
-        item.description
-          ?.toLowerCase()
-          .includes(
-            search.toLowerCase()
-          ) ||
+        method: "POST",
 
-        item.type_of_material
-          ?.toLowerCase()
-          .includes(
-            search.toLowerCase()
-          ) ||
+        headers: {
+          "Content-Type":
+            "application/json"
+        },
 
-        item.req_person
-          ?.toLowerCase()
-          .includes(
-            search.toLowerCase()
-          ) ||
+        body:
+          JSON.stringify({
+            req_person:
+              reqPerson
+          })
 
-        item.vendor_or_dept
-          ?.toLowerCase()
-          .includes(
-            search.toLowerCase()
-          )
-
+      }
     );
+
+    alert("Req Person Saved");
+
+  }
+
+  async function saveVendorDept() {
+
+    await fetch(
+      "/api/vendor-dept",
+      {
+
+        method: "POST",
+
+        headers: {
+          "Content-Type":
+            "application/json"
+        },
+
+        body:
+          JSON.stringify({
+            vendor_dept:
+              vendorDept
+          })
+
+      }
+    );
+
+    alert("Vendor / Dept Saved");
+
+  }
 
   return (
 
     <div className="p-6 bg-gray-100 min-h-screen">
 
-      <div className="flex justify-between items-center mb-6">
+      <h1 className="text-3xl font-bold mb-6">
+        CAT Master
+      </h1>
 
-        <h1 className="text-3xl font-bold">
-          CAT Master
-        </h1>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 
-        <input
-          type="text"
-          placeholder="Search Material"
-          value={search}
-          onChange={(e) =>
-            setSearch(
-              e.target.value
-            )
-          }
-          className="border p-2 rounded w-80 bg-white"
-        />
+        <div className="bg-white p-6 rounded shadow">
 
-      </div>
+          <h2 className="text-xl font-bold mb-4">
+            Material Master
+          </h2>
 
-      <div className="bg-white rounded-lg shadow p-6 mb-6">
+          <div className="space-y-4">
 
-        <h2 className="text-xl font-bold mb-4">
-          Material Details
-        </h2>
+            <input
+              type="text"
+              placeholder="Material Code"
+              value={
+                materialData.material_code
+              }
+              onChange={(e) =>
+                setMaterialData({
+                  ...materialData,
+                  material_code:
+                    e.target.value
+                })
+              }
+              className="border p-2 rounded w-full"
+            />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <input
+              type="text"
+              placeholder="Description"
+              value={
+                materialData.description
+              }
+              onChange={(e) =>
+                setMaterialData({
+                  ...materialData,
+                  description:
+                    e.target.value
+                })
+              }
+              className="border p-2 rounded w-full"
+            />
 
-          <input
-            type="text"
-            placeholder="Material Code"
-            value={formData.material_code}
-            onChange={(e) =>
-              setFormData({
-                ...formData,
-                material_code:
-                  e.target.value
-              })
-            }
-            className="border p-2 rounded"
-          />
+            <select
+              value={
+                materialData.type_of_material
+              }
+              onChange={(e) =>
+                setMaterialData({
+                  ...materialData,
+                  type_of_material:
+                    e.target.value
+                })
+              }
+              className="border p-2 rounded w-full"
+            >
 
-          <input
-            type="text"
-            placeholder="Description"
-            value={formData.description}
-            onChange={(e) =>
-              setFormData({
-                ...formData,
-                description:
-                  e.target.value
-              })
-            }
-            className="border p-2 rounded"
-          />
+              <option value="">
+                Select Type
+              </option>
 
-          <select
-            value={
-              formData.type_of_material
-            }
-            onChange={(e) =>
-              setFormData({
-                ...formData,
-                type_of_material:
-                  e.target.value
-              })
-            }
-            className="border p-2 rounded"
-          >
+              <option value="AH">
+                AH
+              </option>
 
-            <option value="">
-              Select Type
-            </option>
+              <option value="PH">
+                PH
+              </option>
 
-            <option value="AH">
-              AH
-            </option>
+              <option value="MH">
+                MH
+              </option>
 
-            <option value="PH">
-              PH
-            </option>
+            </select>
 
-            <option value="MH">
-              MH
-            </option>
+            <select
+              value={materialData.uom}
+              onChange={(e) =>
+                setMaterialData({
+                  ...materialData,
+                  uom:
+                    e.target.value
+                })
+              }
+              className="border p-2 rounded w-full"
+            >
 
-          </select>
+              <option value="">
+                Select UOM
+              </option>
 
-          <select
-            value={formData.uom}
-            onChange={(e) =>
-              setFormData({
-                ...formData,
-                uom:
-                  e.target.value
-              })
-            }
-            className="border p-2 rounded"
-          >
+              <option value="Nos">
+                Nos
+              </option>
 
-            <option value="">
-              Select UOM
-            </option>
+            </select>
 
-            <option value="Nos">
-              Nos
-            </option>
+            <button
+              onClick={saveMaterial}
+              className="bg-blue-600 text-white px-6 py-2 rounded"
+            >
+              Save
+            </button>
 
-          </select>
+          </div>
 
         </div>
 
-        <h2 className="text-xl font-bold mb-4">
-          Responsibility Details
-        </h2>
+        <div className="bg-white p-6 rounded shadow">
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <h2 className="text-xl font-bold mb-4">
+            Req Person Master
+          </h2>
 
           <input
             type="text"
             placeholder="Req Person"
-            value={formData.req_person}
+            value={reqPerson}
             onChange={(e) =>
-              setFormData({
-                ...formData,
-                req_person:
-                  e.target.value
-              })
+              setReqPerson(
+                e.target.value
+              )
             }
-            className="border p-2 rounded"
+            className="border p-2 rounded w-full mb-4"
           />
+
+          <button
+            onClick={saveReqPerson}
+            className="bg-green-600 text-white px-6 py-2 rounded"
+          >
+            Save
+          </button>
+
+        </div>
+
+        <div className="bg-white p-6 rounded shadow">
+
+          <h2 className="text-xl font-bold mb-4">
+            Vendor / Dept Master
+          </h2>
 
           <input
             type="text"
             placeholder="Vendor / Dept"
-            value={
-              formData.vendor_or_dept
-            }
+            value={vendorDept}
             onChange={(e) =>
-              setFormData({
-                ...formData,
-                vendor_or_dept:
-                  e.target.value
-              })
+              setVendorDept(
+                e.target.value
+              )
             }
-            className="border p-2 rounded"
+            className="border p-2 rounded w-full mb-4"
           />
 
+          <button
+            onClick={saveVendorDept}
+            className="bg-purple-600 text-white px-6 py-2 rounded"
+          >
+            Save
+          </button>
+
         </div>
-
-        <button
-          type="button"
-          onClick={saveMaterial}
-          className="bg-blue-600 text-white px-6 py-2 rounded"
-        >
-          Save Material
-        </button>
-
-      </div>
-
-      <div className="bg-white rounded-lg shadow overflow-x-auto">
-
-        <table className="w-full border-collapse text-sm">
-
-          <thead>
-
-            <tr className="bg-gray-200">
-
-              <th className="border p-3">
-                Material Code
-              </th>
-
-              <th className="border p-3">
-                Description
-              </th>
-
-              <th className="border p-3">
-                Type Of Material
-              </th>
-
-              <th className="border p-3">
-                UOM
-              </th>
-
-              <th className="border p-3">
-                Req Person
-              </th>
-
-              <th className="border p-3">
-                Vendor / Dept
-              </th>
-
-            </tr>
-
-          </thead>
-
-          <tbody>
-
-            {filteredData.map(
-              (
-                item: any,
-                index: number
-              ) => (
-
-                <tr
-                  key={index}
-                  className="hover:bg-gray-50"
-                >
-
-                  <td className="border p-2">
-                    {
-                      item.material_code
-                    }
-                  </td>
-
-                  <td className="border p-2">
-                    {
-                      item.description
-                    }
-                  </td>
-
-                  <td className="border p-2">
-                    {
-                      item.type_of_material
-                    }
-                  </td>
-
-                  <td className="border p-2">
-                    {item.uom}
-                  </td>
-
-                  <td className="border p-2">
-                    {
-                      item.req_person
-                    }
-                  </td>
-
-                  <td className="border p-2">
-                    {
-                      item.vendor_or_dept
-                    }
-                  </td>
-
-                </tr>
-
-              )
-            )}
-
-          </tbody>
-
-        </table>
 
       </div>
 
