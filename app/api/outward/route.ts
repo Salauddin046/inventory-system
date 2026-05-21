@@ -5,9 +5,12 @@ export async function GET() {
 
   try {
 
-    const data = await sql(
-      "SELECT * FROM outward_transactions ORDER BY id DESC"
-    );
+    const data =
+      await sql`
+        SELECT *
+        FROM outward_transactions
+        ORDER BY id DESC
+      `;
 
     return NextResponse.json(data);
 
@@ -21,24 +24,25 @@ export async function GET() {
 
 }
 
-export async function POST(request: Request) {
+export async function POST(
+  request: Request
+) {
 
   try {
 
-    const body = await request.json();
+    const body =
+      await request.json();
 
-    await sql(
-      `
+    await sql`
+
       INSERT INTO outward_transactions
       (
         req_date,
         month,
         req_person,
         type_of_outward,
-        projection_month,
         to_vendor_dept,
         job_card_po_no,
-        projects,
         material_code,
         description,
         req_qty,
@@ -52,30 +56,24 @@ export async function POST(request: Request) {
 
       VALUES
       (
-        $1,$2,$3,$4,$5,$6,$7,$8,$9,
-        $10,$11,$12,$13,$14,$15,$16,$17
+        ${body.req_date},
+        ${body.month},
+        ${body.req_person},
+        ${body.type_of_outward},
+        ${body.to_vendor_dept},
+        ${body.job_card_po_no},
+        ${body.material_code},
+        ${body.description},
+        ${body.req_qty},
+        ${body.g_outward_qty},
+        ${body.ng_outward_qty},
+        ${body.uom},
+        ${body.issuance_date},
+        ${body.tally_ref_no},
+        ${body.remarks}
       )
-      `,
-      [
-        body.req_date,
-        body.month,
-        body.req_person,
-        body.type_of_outward,
-        body.projection_month,
-        body.to_vendor_dept,
-        body.job_card_po_no,
-        body.projects,
-        body.material_code,
-        body.description,
-        body.req_qty,
-        body.g_outward_qty,
-        body.ng_outward_qty,
-        body.uom,
-        body.issuance_date,
-        body.tally_ref_no,
-        body.remarks
-      ]
-    );
+
+    `;
 
     return NextResponse.json({
       success: true

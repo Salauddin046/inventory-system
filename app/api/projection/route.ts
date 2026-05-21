@@ -5,13 +5,12 @@ export async function GET() {
 
   try {
 
-    const data = await sql(
-      `
-      SELECT *
-      FROM projection_master
-      ORDER BY id DESC
-      `
-    );
+    const data =
+      await sql`
+        SELECT *
+        FROM projection_master
+        ORDER BY id DESC
+      `;
 
     return NextResponse.json(data);
 

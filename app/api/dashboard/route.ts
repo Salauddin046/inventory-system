@@ -6,52 +6,43 @@ export async function GET() {
   try {
 
     const materials =
-      await sql(
-        `
+      await sql`
         SELECT COUNT(*) AS count
         FROM materials
-        `
-      );
+      `;
 
     const inward =
-      await sql(
-        `
+      await sql`
         SELECT
         COALESCE(
           SUM(g_qty),
           0
         ) AS total
         FROM inward_transactions
-        `
-      );
+      `;
 
     const outward =
-      await sql(
-        `
+      await sql`
         SELECT
         COALESCE(
           SUM(g_outward_qty),
           0
         ) AS total
         FROM outward_transactions
-        `
-      );
+      `;
 
     const projection =
-      await sql(
-        `
+      await sql`
         SELECT
         COALESCE(
           SUM(projection_qty),
           0
         ) AS total
         FROM live_stock
-        `
-      );
+      `;
 
     const liveStock =
-      await sql(
-        `
+      await sql`
         SELECT
         COALESCE(
           SUM(
@@ -62,25 +53,34 @@ export async function GET() {
           0
         ) AS total
         FROM live_stock
-        `
-      );
+      `;
 
     return NextResponse.json({
 
       totalMaterials:
-        materials[0].count,
+        Number(
+          materials[0].count || 0
+        ),
 
       totalInward:
-        inward[0].total,
+        Number(
+          inward[0].total || 0
+        ),
 
       totalOutward:
-        outward[0].total,
+        Number(
+          outward[0].total || 0
+        ),
 
       totalProjection:
-        projection[0].total,
+        Number(
+          projection[0].total || 0
+        ),
 
       totalLiveStock:
-        liveStock[0].total
+        Number(
+          liveStock[0].total || 0
+        )
 
     });
 

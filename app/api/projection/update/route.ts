@@ -10,40 +10,43 @@ export async function POST(
     const body =
       await request.json();
 
-    await sql(
-      `
+    await sql`
+
       UPDATE projection_master
+
       SET
-        projection_action = $1,
-        stock_action = $2,
-        stock_qty = $3
-      WHERE id = $4
-      `,
-      [
-        body.projection_action,
-        body.stock_action,
-        body.stock_qty,
-        body.id
-      ]
-    );
+
+        projection_action =
+          ${body.projection_action},
+
+        stock_action =
+          ${body.stock_action},
+
+        stock_qty =
+          ${body.stock_qty}
+
+      WHERE id =
+        ${body.id}
+
+    `;
 
     if (
       body.projection_action ===
       "Allocate"
     ) {
 
-      await sql(
-        `
+      await sql`
+
         UPDATE live_stock
+
         SET
-          projection_qty = $1
-        WHERE material_code = $2
-        `,
-        [
-          body.projection_qty,
-          body.material_code
-        ]
-      );
+          projection_qty =
+            ${body.projection_qty}
+
+        WHERE material_code =
+          ${body.material_code}
+
+      `;
 
     }
 
@@ -52,17 +55,17 @@ export async function POST(
       "Unallocate"
     ) {
 
-      await sql(
-        `
+      await sql`
+
         UPDATE live_stock
+
         SET
           projection_qty = 0
-        WHERE material_code = $1
-        `,
-        [
-          body.material_code
-        ]
-      );
+
+        WHERE material_code =
+          ${body.material_code}
+
+      `;
 
     }
 
@@ -71,23 +74,24 @@ export async function POST(
       "Issue"
     ) {
 
-      await sql(
-        `
+      await sql`
+
         UPDATE live_stock
+
         SET
+
           projection_qty =
-            projection_qty - $1,
+            projection_qty -
+            ${body.stock_qty},
 
           total_outward =
-            total_outward + $1
+            total_outward +
+            ${body.stock_qty}
 
-        WHERE material_code = $2
-        `,
-        [
-          body.stock_qty,
-          body.material_code
-        ]
-      );
+        WHERE material_code =
+          ${body.material_code}
+
+      `;
 
     }
 
@@ -100,8 +104,11 @@ export async function POST(
     console.log(error);
 
     return NextResponse.json({
+
       success: false,
+
       error: error.message
+
     });
 
   }
