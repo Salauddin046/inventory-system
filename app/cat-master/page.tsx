@@ -17,6 +17,8 @@ export default function CatMasterPage() {
 
       description: "",
 
+      type_of_material: "",
+
       uom: "",
 
       req_person: "",
@@ -62,6 +64,19 @@ export default function CatMasterPage() {
 
   async function saveMaterial() {
 
+    if (
+      !formData.material_code ||
+      !formData.description
+    ) {
+
+      alert(
+        "Enter Required Fields"
+      );
+
+      return;
+
+    }
+
     try {
 
       const response =
@@ -97,6 +112,8 @@ export default function CatMasterPage() {
 
           description: "",
 
+          type_of_material: "",
+
           uom: "",
 
           req_person: "",
@@ -120,6 +137,10 @@ export default function CatMasterPage() {
 
       console.log(error);
 
+      alert(
+        "Error Saving Material"
+      );
+
     }
 
   }
@@ -135,6 +156,12 @@ export default function CatMasterPage() {
           ) ||
 
         item.description
+          ?.toLowerCase()
+          .includes(
+            search.toLowerCase()
+          ) ||
+
+        item.type_of_material
           ?.toLowerCase()
           .includes(
             search.toLowerCase()
@@ -158,135 +185,11 @@ export default function CatMasterPage() {
 
     <div className="p-6">
 
-      <h1 className="text-3xl font-bold mb-6">
-        CAT Master
-      </h1>
+      <div className="flex justify-between items-center mb-6">
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
-
-        <div>
-
-          <label className="block text-sm font-medium mb-1">
-            Material Code
-          </label>
-
-          <input
-            type="text"
-            placeholder="Enter Material Code"
-            value={formData.material_code}
-            onChange={(e) =>
-              setFormData({
-                ...formData,
-                material_code:
-                  e.target.value
-              })
-            }
-            className="border p-2 rounded w-full"
-          />
-
-        </div>
-
-        <div>
-
-          <label className="block text-sm font-medium mb-1">
-            Description
-          </label>
-
-          <input
-            type="text"
-            placeholder="Enter Description"
-            value={formData.description}
-            onChange={(e) =>
-              setFormData({
-                ...formData,
-                description:
-                  e.target.value
-              })
-            }
-            className="border p-2 rounded w-full"
-          />
-
-        </div>
-
-        <div>
-
-          <label className="block text-sm font-medium mb-1">
-            UOM
-          </label>
-
-          <input
-            type="text"
-            placeholder="Enter UOM"
-            value={formData.uom}
-            onChange={(e) =>
-              setFormData({
-                ...formData,
-                uom:
-                  e.target.value
-              })
-            }
-            className="border p-2 rounded w-full"
-          />
-
-        </div>
-
-        <div>
-
-          <label className="block text-sm font-medium mb-1">
-            Req Person
-          </label>
-
-          <input
-            type="text"
-            placeholder="Enter Req Person"
-            value={formData.req_person}
-            onChange={(e) =>
-              setFormData({
-                ...formData,
-                req_person:
-                  e.target.value
-              })
-            }
-            className="border p-2 rounded w-full"
-          />
-
-        </div>
-
-        <div>
-
-          <label className="block text-sm font-medium mb-1">
-            Vendor / Dept
-          </label>
-
-          <input
-            type="text"
-            placeholder="Enter Vendor or Dept"
-            value={
-              formData.vendor_or_dept
-            }
-            onChange={(e) =>
-              setFormData({
-                ...formData,
-                vendor_or_dept:
-                  e.target.value
-              })
-            }
-            className="border p-2 rounded w-full"
-          />
-
-        </div>
-
-      </div>
-
-      <button
-        type="button"
-        onClick={saveMaterial}
-        className="bg-blue-600 text-white px-6 py-2 rounded mb-6"
-      >
-        Save Material
-      </button>
-
-      <div className="flex justify-end mb-4">
+        <h1 className="text-3xl font-bold">
+          CAT Master
+        </h1>
 
         <input
           type="text"
@@ -302,31 +205,139 @@ export default function CatMasterPage() {
 
       </div>
 
-      <div className="overflow-x-auto">
+      <div className="bg-white border rounded-lg p-6 mb-6">
 
-        <table className="w-full border border-collapse text-sm">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
+
+          <input
+            type="text"
+            placeholder="Material Code"
+            value={formData.material_code}
+            onChange={(e) =>
+              setFormData({
+                ...formData,
+                material_code:
+                  e.target.value
+              })
+            }
+            className="border p-2 rounded"
+          />
+
+          <input
+            type="text"
+            placeholder="Description"
+            value={formData.description}
+            onChange={(e) =>
+              setFormData({
+                ...formData,
+                description:
+                  e.target.value
+              })
+            }
+            className="border p-2 rounded"
+          />
+
+          <input
+            type="text"
+            placeholder="Type Of Material"
+            value={
+              formData.type_of_material
+            }
+            onChange={(e) =>
+              setFormData({
+                ...formData,
+                type_of_material:
+                  e.target.value
+              })
+            }
+            className="border p-2 rounded"
+          />
+
+          <input
+            type="text"
+            placeholder="UOM"
+            value={formData.uom}
+            onChange={(e) =>
+              setFormData({
+                ...formData,
+                uom:
+                  e.target.value
+              })
+            }
+            className="border p-2 rounded"
+          />
+
+          <input
+            type="text"
+            placeholder="Req Person"
+            value={formData.req_person}
+            onChange={(e) =>
+              setFormData({
+                ...formData,
+                req_person:
+                  e.target.value
+              })
+            }
+            className="border p-2 rounded"
+          />
+
+          <input
+            type="text"
+            placeholder="Vendor / Dept"
+            value={
+              formData.vendor_or_dept
+            }
+            onChange={(e) =>
+              setFormData({
+                ...formData,
+                vendor_or_dept:
+                  e.target.value
+              })
+            }
+            className="border p-2 rounded"
+          />
+
+        </div>
+
+        <button
+          type="button"
+          onClick={saveMaterial}
+          className="bg-blue-600 text-white px-6 py-2 rounded mt-6"
+        >
+          Save Material
+        </button>
+
+      </div>
+
+      <div className="overflow-x-auto bg-white border rounded-lg">
+
+        <table className="w-full border-collapse text-sm">
 
           <thead>
 
             <tr className="bg-gray-200">
 
-              <th className="border p-2">
+              <th className="border p-3">
                 Material Code
               </th>
 
-              <th className="border p-2">
+              <th className="border p-3">
                 Description
               </th>
 
-              <th className="border p-2">
+              <th className="border p-3">
+                Type Of Material
+              </th>
+
+              <th className="border p-3">
                 UOM
               </th>
 
-              <th className="border p-2">
+              <th className="border p-3">
                 Req Person
               </th>
 
-              <th className="border p-2">
+              <th className="border p-3">
                 Vendor / Dept
               </th>
 
@@ -342,7 +353,10 @@ export default function CatMasterPage() {
                 index: number
               ) => (
 
-                <tr key={index}>
+                <tr
+                  key={index}
+                  className="hover:bg-gray-50"
+                >
 
                   <td className="border p-2">
                     {
@@ -353,6 +367,12 @@ export default function CatMasterPage() {
                   <td className="border p-2">
                     {
                       item.description
+                    }
+                  </td>
+
+                  <td className="border p-2">
+                    {
+                      item.type_of_material
                     }
                   </td>
 
