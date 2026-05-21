@@ -10,7 +10,7 @@ export async function GET() {
 
         SELECT *
 
-        FROM materials
+        FROM material_master
 
         ORDER BY id DESC
 
@@ -39,7 +39,7 @@ export async function POST(
 
     await sql`
 
-      INSERT INTO materials
+      INSERT INTO material_master
       (
         material_code,
         description,
