@@ -37,34 +37,36 @@ export async function POST(
     const body =
       await request.json();
 
-    console.log(body);
-
     await sql`
 
       INSERT INTO outward_transactions
       (
 
-        outward_date,
+        req_date,
 
         month,
 
         req_person,
 
-        vendor_dept,
+        to_vendor_dept,
 
-        type_of_outward,
+        job_card_po_no,
 
         material_code,
 
         material_description,
 
-        type_of_material,
+        req_qty,
 
         g_outward_qty,
 
         ng_outward_qty,
 
         uom,
+
+        issuance_date,
+
+        tally_ref_no,
 
         remarks
 
@@ -73,27 +75,31 @@ export async function POST(
       VALUES
       (
 
-        ${body.outward_date},
+        ${body.req_date},
 
         ${body.month},
 
         ${body.req_person},
 
-        ${body.vendor_dept},
+        ${body.to_vendor_dept},
 
-        ${body.type_of_outward},
+        ${body.job_card_po_no},
 
         ${body.material_code},
 
         ${body.material_description},
 
-        ${body.type_of_material},
+        ${Number(body.req_qty || 0)},
 
         ${Number(body.g_outward_qty || 0)},
 
         ${Number(body.ng_outward_qty || 0)},
 
         ${body.uom},
+
+        ${body.issuance_date},
+
+        ${body.tally_ref_no},
 
         ${body.remarks}
 
