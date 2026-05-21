@@ -183,7 +183,7 @@ export default function CatMasterPage() {
 
   return (
 
-    <div className="p-6">
+    <div className="p-6 bg-gray-100 min-h-screen">
 
       <div className="flex justify-between items-center mb-6">
 
@@ -193,21 +193,25 @@ export default function CatMasterPage() {
 
         <input
           type="text"
-          placeholder="Search"
+          placeholder="Search Material"
           value={search}
           onChange={(e) =>
             setSearch(
               e.target.value
             )
           }
-          className="border p-2 rounded w-80"
+          className="border p-2 rounded w-80 bg-white"
         />
 
       </div>
 
-      <div className="bg-white border rounded-lg p-6 mb-6">
+      <div className="bg-white rounded-lg shadow p-6 mb-6">
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
+        <h2 className="text-xl font-bold mb-4">
+          Material Details
+        </h2>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
 
           <input
             type="text"
@@ -237,9 +241,7 @@ export default function CatMasterPage() {
             className="border p-2 rounded"
           />
 
-          <input
-            type="text"
-            placeholder="Type Of Material"
+          <select
             value={
               formData.type_of_material
             }
@@ -251,11 +253,27 @@ export default function CatMasterPage() {
               })
             }
             className="border p-2 rounded"
-          />
+          >
 
-          <input
-            type="text"
-            placeholder="UOM"
+            <option value="">
+              Select Type
+            </option>
+
+            <option value="AH">
+              AH
+            </option>
+
+            <option value="PH">
+              PH
+            </option>
+
+            <option value="MH">
+              MH
+            </option>
+
+          </select>
+
+          <select
             value={formData.uom}
             onChange={(e) =>
               setFormData({
@@ -265,7 +283,25 @@ export default function CatMasterPage() {
               })
             }
             className="border p-2 rounded"
-          />
+          >
+
+            <option value="">
+              Select UOM
+            </option>
+
+            <option value="Nos">
+              Nos
+            </option>
+
+          </select>
+
+        </div>
+
+        <h2 className="text-xl font-bold mb-4">
+          Responsibility Details
+        </h2>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
 
           <input
             type="text"
@@ -302,14 +338,14 @@ export default function CatMasterPage() {
         <button
           type="button"
           onClick={saveMaterial}
-          className="bg-blue-600 text-white px-6 py-2 rounded mt-6"
+          className="bg-blue-600 text-white px-6 py-2 rounded"
         >
           Save Material
         </button>
 
       </div>
 
-      <div className="overflow-x-auto bg-white border rounded-lg">
+      <div className="bg-white rounded-lg shadow overflow-x-auto">
 
         <table className="w-full border-collapse text-sm">
 
