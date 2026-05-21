@@ -32,7 +32,9 @@ export default function CatMasterPage() {
   }
 
   useEffect(() => {
+
     loadMaterials();
+
   }, []);
 
   async function handleSubmit(e: any) {
@@ -143,9 +145,7 @@ export default function CatMasterPage() {
           className="border p-2 rounded"
         />
 
-        <input
-          type="text"
-          placeholder="Type Of Material"
+        <select
           value={form.type_of_material}
           onChange={(e) =>
             setForm({
@@ -154,7 +154,25 @@ export default function CatMasterPage() {
             })
           }
           className="border p-2 rounded"
-        />
+        >
+
+          <option value="">
+            Select Type Of Material
+          </option>
+
+          <option value="AH">
+            AH
+          </option>
+
+          <option value="PH">
+            PH
+          </option>
+
+          <option value="MH">
+            MH
+          </option>
+
+        </select>
 
         <button
           type="submit"
@@ -303,4 +321,5 @@ export default function CatMasterPage() {
     </div>
 
   );
+
 }

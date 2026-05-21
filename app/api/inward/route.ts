@@ -5,31 +5,21 @@ export async function GET() {
 
   try {
 
-    const inward = await sql`
-
+    const data = await sql`
       SELECT *
-
       FROM inward_transactions
-
       ORDER BY id DESC
-
     `;
 
-    return NextResponse.json(inward);
+    console.log(data);
 
-  } catch (error) {
+    return NextResponse.json(data);
+
+  } catch (error: any) {
 
     console.error(error);
 
-    return NextResponse.json(
-      {
-        success: false,
-        message: "Failed to fetch inward data"
-      },
-      {
-        status: 500
-      }
-    );
+    return NextResponse.json([]);
 
   }
 
@@ -45,6 +35,8 @@ export async function POST(request: Request) {
 
       INSERT INTO inward_transactions
       (
+        inward_date,
+        month,
         vendor_name,
         type_of_inward,
         invoice_no,
@@ -55,46 +47,40 @@ export async function POST(request: Request) {
         ng_qty,
         uom,
         tally_ref_no,
-        remarks,
-        inward_date
+        remarks
       )
 
       VALUES
       (
+        ${body.inward_date},
+        ${body.month},
         ${body.vendor_name},
         ${body.type_of_inward},
         ${body.invoice_no},
         ${body.material_code},
         ${body.material_description},
         ${body.type_of_material},
-        ${body.g_qty},
-        ${body.ng_qty},
+        ${Number(body.g_qty)},
+        ${Number(body.ng_qty || 0)},
         ${body.uom},
         ${body.tally_ref_no},
-        ${body.remarks},
-        ${body.inward_date}
+        ${body.remarks}
       )
 
     `;
 
     return NextResponse.json({
-      success: true,
-      message: "Inward saved successfully"
+      success: true
     });
 
-  } catch (error) {
+  } catch (error: any) {
 
     console.error(error);
 
-    return NextResponse.json(
-      {
-        success: false,
-        message: "Failed to save inward"
-      },
-      {
-        status: 500
-      }
-    );
+    return NextResponse.json({
+      success: false,
+      error: error.message
+    });
 
   }
 
