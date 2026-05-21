@@ -1,6 +1,33 @@
 import { NextResponse } from "next/server";
 import sql from "@/lib/db";
 
+export async function GET() {
+
+  try {
+
+    const data =
+      await sql`
+
+        SELECT *
+
+        FROM vendor_dept_master
+
+        ORDER BY id DESC
+
+      `;
+
+    return NextResponse.json(data);
+
+  } catch (error) {
+
+    console.log(error);
+
+    return NextResponse.json([]);
+
+  }
+
+}
+
 export async function POST(
   request: Request
 ) {
