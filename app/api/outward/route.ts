@@ -16,6 +16,8 @@ export async function GET() {
 
       `;
 
+    console.log(data);
+
     return NextResponse.json(data);
 
   } catch (error: any) {
@@ -36,8 +38,6 @@ export async function POST(
 
     const body =
       await request.json();
-
-    console.log(body);
 
     await sql`
 
