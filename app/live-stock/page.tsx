@@ -31,6 +31,8 @@ export default function LiveStockPage() {
       const result =
         await response.json();
 
+      console.log(result);
+
       if (
         Array.isArray(result)
       ) {
@@ -141,59 +143,15 @@ export default function LiveStockPage() {
                       item.inward_qty || 0
                     );
 
-                  let outwardQty = 0;
+                  const outwardQty =
+                    Number(
+                      item.outward_qty || 0
+                    );
 
-                  let projectionQty = 0;
-
-                  if (
-                    item.stock_action ===
-                    "Issue"
-                  ) {
-
-                    outwardQty =
-                      Number(
-                        item.stock_qty || 0
-                      );
-
-                    projectionQty =
-                      Number(
-                        item.projection_qty || 0
-                      ) -
-                      outwardQty;
-
-                  }
-
-                  if (
-                    item.stock_action ===
-                    "Not Issue"
-                  ) {
-
-                    outwardQty = 0;
-
-                    projectionQty = 0;
-
-                  }
-
-                  if (
-                    item.projection_action ===
-                    "Allocate"
-                  ) {
-
-                    projectionQty =
-                      Number(
-                        item.projection_qty || 0
-                      );
-
-                  }
-
-                  if (
-                    item.projection_action ===
-                    "Un Allocate"
-                  ) {
-
-                    projectionQty = 0;
-
-                  }
+                  const projectionQty =
+                    Number(
+                      item.projection_qty || 0
+                    );
 
                   const liveStock =
 
