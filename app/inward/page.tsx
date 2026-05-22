@@ -81,7 +81,18 @@ export default function InwardPage() {
       const result =
         await response.json();
 
-      setMaterials(result);
+      console.log(
+        "Materials:",
+        result
+      );
+
+      if (
+        Array.isArray(result)
+      ) {
+
+        setMaterials(result);
+
+      }
 
     } catch (error) {
 
@@ -103,7 +114,13 @@ export default function InwardPage() {
       const result =
         await response.json();
 
-      setVendors(result);
+      if (
+        Array.isArray(result)
+      ) {
+
+        setVendors(result);
+
+      }
 
     } catch (error) {
 
@@ -125,7 +142,13 @@ export default function InwardPage() {
       const result =
         await response.json();
 
-      setInwardData(result);
+      if (
+        Array.isArray(result)
+      ) {
+
+        setInwardData(result);
+
+      }
 
     } catch (error) {
 
@@ -142,7 +165,9 @@ export default function InwardPage() {
     const selected =
       materials.find(
         (item: any) =>
-          item.material_code === value
+
+          item.material_code ===
+          value
       );
 
     setForm({
@@ -197,45 +222,6 @@ export default function InwardPage() {
 
         fetchInwardData();
 
-        setForm({
-
-          inward_date:
-            new Date()
-              .toISOString()
-              .split("T")[0],
-
-          month:
-            new Date()
-              .toLocaleString(
-                "default",
-                {
-                  month: "long",
-                  year: "numeric"
-                }
-              ),
-
-          vendor_name: "",
-
-          type_of_inward: "",
-
-          invoice_no: "",
-
-          material_code: "",
-
-          description: "",
-
-          type_of_material: "",
-
-          g_qty: "",
-
-          ng_qty: "",
-
-          uom: "",
-
-          remarks: ""
-
-        });
-
       }
 
     } catch (error) {
@@ -248,58 +234,33 @@ export default function InwardPage() {
 
   function downloadCSV() {
 
-    const filtered =
-      inwardData.filter(
-        (item: any) => {
-
-          if (
-            !fromDate ||
-            !toDate
-          ) return true;
-
-          return (
-            item.inward_date >=
-              fromDate &&
-            item.inward_date <=
-              toDate
-          );
-
-        }
-      );
-
     const headers = [
 
       "Date",
       "Month",
       "Vendor",
-      "Type Of Inward",
-      "Invoice No",
+      "Invoice",
       "Material Code",
       "Description",
-      "Type Of Material",
       "Good Qty",
       "NG Qty",
-      "UOM",
-      "Remarks"
+      "UOM"
 
     ];
 
     const rows =
-      filtered.map(
+      inwardData.map(
         (item: any) => [
 
           item.inward_date,
           item.month,
           item.vendor_name,
-          item.type_of_inward,
           item.invoice_no,
           item.material_code,
           item.description,
-          item.type_of_material,
           item.g_qty,
           item.ng_qty,
-          item.uom,
-          item.remarks
+          item.uom
 
         ]
       );
@@ -595,6 +556,149 @@ export default function InwardPage() {
         >
           Download CSV
         </button>
+
+      </div>
+
+      <div className="overflow-x-auto">
+
+        <table className="w-full border border-collapse text-sm">
+
+          <thead>
+
+            <tr className="bg-gray-200">
+
+              <th className="border p-2">
+                Date
+              </th>
+
+              <th className="border p-2">
+                Month
+              </th>
+
+              <th className="border p-2">
+                Vendor
+              </th>
+
+              <th className="border p-2">
+                Invoice No
+              </th>
+
+              <th className="border p-2">
+                Material Code
+              </th>
+
+              <th className="border p-2">
+                Description
+              </th>
+
+              <th className="border p-2">
+                Type
+              </th>
+
+              <th className="border p-2">
+                G Qty
+              </th>
+
+              <th className="border p-2">
+                NG Qty
+              </th>
+
+              <th className="border p-2">
+                UOM
+              </th>
+
+              <th className="border p-2">
+                Remarks
+              </th>
+
+            </tr>
+
+          </thead>
+
+          <tbody>
+
+            {inwardData.map(
+              (
+                item: any,
+                index: number
+              ) => (
+
+                <tr key={index}>
+
+                  <td className="border p-2">
+                    {
+                      item.inward_date
+                    }
+                  </td>
+
+                  <td className="border p-2">
+                    {
+                      item.month
+                    }
+                  </td>
+
+                  <td className="border p-2">
+                    {
+                      item.vendor_name
+                    }
+                  </td>
+
+                  <td className="border p-2">
+                    {
+                      item.invoice_no
+                    }
+                  </td>
+
+                  <td className="border p-2 font-bold">
+                    {
+                      item.material_code
+                    }
+                  </td>
+
+                  <td className="border p-2">
+                    {
+                      item.description
+                    }
+                  </td>
+
+                  <td className="border p-2">
+                    {
+                      item.type_of_material
+                    }
+                  </td>
+
+                  <td className="border p-2 text-green-600 font-bold">
+                    {
+                      item.g_qty
+                    }
+                  </td>
+
+                  <td className="border p-2 text-red-600 font-bold">
+                    {
+                      item.ng_qty
+                    }
+                  </td>
+
+                  <td className="border p-2">
+                    {
+                      item.uom
+                    }
+                  </td>
+
+                  <td className="border p-2">
+                    {
+                      item.remarks
+                    }
+                  </td>
+
+                </tr>
+
+              )
+            )}
+
+          </tbody>
+
+        </table>
 
       </div>
 
