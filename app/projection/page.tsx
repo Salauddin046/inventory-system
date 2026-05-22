@@ -7,17 +7,40 @@ export default function ProjectionPage() {
   const [projectionData, setProjectionData] =
     useState<any[]>([]);
 
+  const [materials, setMaterials] =
+    useState<any[]>([]);
+
+  const [form, setForm] = useState({
+
+    projection_month: "",
+
+    revision_no: "",
+
+    material_code: "",
+
+    description: "",
+
+    projection_qty: "",
+
+    projection_action: "Allocate",
+
+    stock_action: "Not Issue",
+
+    stock_qty: ""
+
+  });
+
   useEffect(() => {
 
-    fetchProjection();
+    fetchData();
 
   }, []);
 
-  async function fetchProjection() {
+  async function fetchData() {
 
     try {
 
-      const response =
+      const projectionRes =
         await fetch(
           "/api/projection",
           {
@@ -25,99 +48,38 @@ export default function ProjectionPage() {
           }
         );
 
-      const result =
-        await response.json();
+      const projectionJson =
+        await projectionRes.json();
 
-      setProjectionData(
-        Array.isArray(result)
-          ? result
-          : []
-      );
+      if (
+        Array.isArray(
+          projectionJson
+        )
+      ) {
 
-    } catch (error) {
-
-      console.log(error);
-
-    }
-
-  }
-
-  async function updateProjection(
-    item: any
-  ) {
-
-    try {
-
-      const projectionAction =
-        (
-          document.getElementById(
-            `projection-action-${item.id}`
-          ) as HTMLSelectElement
-        )?.value;
-
-      const stockAction =
-        (
-          document.getElementById(
-            `stock-action-${item.id}`
-          ) as HTMLSelectElement
-        )?.value;
-
-      const stockQty =
-        Number(
-          (
-            document.getElementById(
-              `stock-qty-${item.id}`
-            ) as HTMLInputElement
-          )?.value || 0
+        setProjectionData(
+          projectionJson
         );
 
-      const response =
+      }
+
+      const materialRes =
         await fetch(
-          "/api/projection/update",
-          {
-
-            method: "POST",
-
-            headers: {
-              "Content-Type":
-                "application/json"
-            },
-
-            body:
-              JSON.stringify({
-
-                id: item.id,
-
-                material_code:
-                  item.material_code,
-
-                projection_qty:
-                  item.qty,
-
-                projection_action:
-                  projectionAction,
-
-                stock_action:
-                  stockAction,
-
-                stock_qty:
-                  stockQty
-
-              })
-
-          }
+          "/api/materials"
         );
 
-      const result =
-        await response.json();
+      const materialJson =
+        await materialRes.json();
 
-      if (result.success) {
+      if (
+        Array.isArray(
+          materialJson
+        )
+      ) {
 
-        alert(
-          "Updated Successfully"
+        setMaterials(
+          materialJson
         );
-
-        fetchProjection();
 
       }
 
@@ -129,13 +91,273 @@ export default function ProjectionPage() {
 
   }
 
+  async function handleSubmit(
+    e: any
+  ) {
+
+    e.preventDefault();
+
+    try {
+
+      const response =
+        await fetch(
+          "/api/projection",
+          {
+
+            method: "POST",
+
+            headers: {
+              "Content-Type":
+                "application/json"
+            },
+
+            body:
+              JSON.stringify(form)
+
+          }
+        );
+
+      const result =
+        await response.json();
+
+      if (result.success) {
+
+        alert(
+          "Projection Saved Successfully"
+        );
+
+        fetchData();
+
+        setForm({
+
+          projection_month: "",
+
+          revision_no: "",
+
+          material_code: "",
+
+          description: "",
+
+          projection_qty: "",
+
+          projection_action:
+            "Allocate",
+
+          stock_action:
+            "Not Issue",
+
+          stock_qty: ""
+
+        });
+
+      } else {
+
+        alert(
+          result.error ||
+          "Save Failed"
+        );
+
+      }
+
+    } catch (error) {
+
+      console.log(error);
+
+    }
+
+  }
+
+  function handleMaterialChange(
+    code: string
+  ) {
+
+    const selected =
+      materials.find(
+        (item: any) =>
+          item.material_code === code
+      );
+
+    if (selected) {
+
+      setForm({
+        ...form,
+
+        material_code:
+          selected.material_code,
+
+        description:
+          selected.description || ""
+
+      });
+
+    }
+
+  }
+
   return (
 
     <div className="p-6">
 
       <h1 className="text-3xl font-bold mb-6">
-        Projection Data
+        Projection Master
       </h1>
+
+      <form
+        onSubmit={handleSubmit}
+        className="grid grid-cols-4 gap-4 mb-8"
+      >
+
+        <input
+          type="text"
+          placeholder="Projection Month"
+          value={form.projection_month}
+          onChange={(e) =>
+            setForm({
+              ...form,
+              projection_month:
+                e.target.value
+            })
+          }
+          className="border p-2 rounded"
+        />
+
+        <input
+          type="text"
+          placeholder="Revision No"
+          value={form.revision_no}
+          onChange={(e) =>
+            setForm({
+              ...form,
+              revision_no:
+                e.target.value
+            })
+          }
+          className="border p-2 rounded"
+        />
+
+        <select
+          value={form.material_code}
+          onChange={(e) =>
+            handleMaterialChange(
+              e.target.value
+            )
+          }
+          className="border p-2 rounded"
+        >
+
+          <option value="">
+            Select Material
+          </option>
+
+          {materials.map(
+            (item: any) => (
+
+              <option
+                key={item.id}
+                value={
+                  item.material_code
+                }
+              >
+                {item.material_code}
+              </option>
+
+            )
+          )}
+
+        </select>
+
+        <input
+          type="text"
+          placeholder="Description"
+          value={form.description}
+          readOnly
+          className="border p-2 rounded bg-gray-100"
+        />
+
+        <input
+          type="number"
+          placeholder="Projection Qty"
+          value={form.projection_qty}
+          onChange={(e) =>
+            setForm({
+              ...form,
+              projection_qty:
+                e.target.value
+            })
+          }
+          className="border p-2 rounded"
+        />
+
+        <select
+          value={
+            form.projection_action
+          }
+          onChange={(e) =>
+            setForm({
+              ...form,
+              projection_action:
+                e.target.value
+            })
+          }
+          className="border p-2 rounded"
+        >
+
+          <option value="Allocate">
+            Allocate
+          </option>
+
+          <option value="Unallocate">
+            Unallocate
+          </option>
+
+        </select>
+
+        <select
+          value={
+            form.stock_action
+          }
+          onChange={(e) =>
+            setForm({
+              ...form,
+              stock_action:
+                e.target.value
+            })
+          }
+          className="border p-2 rounded"
+        >
+
+          <option value="Not Issue">
+            Not Issue
+          </option>
+
+          <option value="Issue">
+            Issue
+          </option>
+
+        </select>
+
+        <input
+          type="number"
+          placeholder="Stock Qty"
+          value={form.stock_qty}
+          onChange={(e) =>
+            setForm({
+              ...form,
+              stock_qty:
+                e.target.value
+            })
+          }
+          className="border p-2 rounded"
+        />
+
+        <button
+          type="submit"
+          className="bg-black text-white p-2 rounded"
+        >
+          Save Projection
+        </button>
+
+      </form>
 
       <div className="overflow-x-auto">
 
@@ -144,6 +366,14 @@ export default function ProjectionPage() {
           <thead>
 
             <tr className="bg-gray-200">
+
+              <th className="border p-2">
+                Projection Month
+              </th>
+
+              <th className="border p-2">
+                Revision No
+              </th>
 
               <th className="border p-2">
                 Material Code
@@ -170,7 +400,7 @@ export default function ProjectionPage() {
               </th>
 
               <th className="border p-2">
-                Update
+                Allocated Qty
               </th>
 
             </tr>
@@ -179,100 +409,89 @@ export default function ProjectionPage() {
 
           <tbody>
 
-            {projectionData.map(
-              (
-                item: any,
-                index: number
-              ) => (
+            {projectionData &&
+            projectionData.length > 0 ? (
 
-                <tr key={index}>
+              projectionData.map(
+                (
+                  item: any,
+                  index: number
+                ) => (
 
-                  <td className="border p-2">
-                    {item.material_code}
-                  </td>
+                  <tr key={index}>
 
-                  <td className="border p-2">
-                    {item.description}
-                  </td>
-
-                  <td className="border p-2 font-bold">
-                    {item.qty}
-                  </td>
-
-                  <td className="border p-2">
-
-                    <select
-                      id={`projection-action-${item.id}`}
-                      defaultValue={
-                        item.projection_action ||
-                        "Unallocate"
+                    <td className="border p-2">
+                      {
+                        item.projection_month
                       }
-                      className="border p-2 rounded"
-                    >
+                    </td>
 
-                      <option value="Allocate">
-                        Allocate
-                      </option>
-
-                      <option value="Unallocate">
-                        Unallocate
-                      </option>
-
-                    </select>
-
-                  </td>
-
-                  <td className="border p-2">
-
-                    <select
-                      id={`stock-action-${item.id}`}
-                      defaultValue={
-                        item.stock_action ||
-                        "Not Issue"
+                    <td className="border p-2">
+                      {
+                        item.revision_no
                       }
-                      className="border p-2 rounded"
-                    >
+                    </td>
 
-                      <option value="Issue">
-                        Issue
-                      </option>
-
-                      <option value="Not Issue">
-                        Not Issue
-                      </option>
-
-                    </select>
-
-                  </td>
-
-                  <td className="border p-2">
-
-                    <input
-                      type="number"
-                      id={`stock-qty-${item.id}`}
-                      defaultValue={0}
-                      className="border p-2 rounded w-24"
-                    />
-
-                  </td>
-
-                  <td className="border p-2">
-
-                    <button
-                      type="button"
-                      onClick={() =>
-                        updateProjection(item)
+                    <td className="border p-2 font-bold">
+                      {
+                        item.material_code
                       }
-                      className="bg-blue-600 text-white px-4 py-2 rounded"
-                    >
-                      Update
-                    </button>
+                    </td>
 
-                  </td>
+                    <td className="border p-2">
+                      {
+                        item.description
+                      }
+                    </td>
 
-                </tr>
+                    <td className="border p-2 text-blue-600 font-bold">
+                      {
+                        item.projection_qty
+                      }
+                    </td>
 
+                    <td className="border p-2">
+                      {
+                        item.projection_action
+                      }
+                    </td>
+
+                    <td className="border p-2">
+                      {
+                        item.stock_action
+                      }
+                    </td>
+
+                    <td className="border p-2">
+                      {
+                        item.stock_qty
+                      }
+                    </td>
+
+                    <td className="border p-2 text-green-600 font-bold">
+                      {
+                        item.allocated_qty
+                      }
+                    </td>
+
+                  </tr>
+
+                )
               )
+
+            ) : (
+
+              <tr>
+
+                <td
+                  colSpan={9}
+                  className="border p-4 text-center"
+                >
+                  No Projection Data Found
+                </td>
+
+              </tr>
+
             )}
 
           </tbody>
