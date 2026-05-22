@@ -55,6 +55,8 @@ export default function InwardPage() {
 
       uom: "",
 
+      tally_ref_no: "",
+
       remarks: ""
 
     });
@@ -71,90 +73,43 @@ export default function InwardPage() {
 
   async function fetchMaterials() {
 
-    try {
-
-      const response =
-        await fetch(
-          "/api/material-master"
-        );
-
-      const result =
-        await response.json();
-
-      console.log(
-        "Materials:",
-        result
+    const response =
+      await fetch(
+        "/api/material-master"
       );
 
-      if (
-        Array.isArray(result)
-      ) {
+    const result =
+      await response.json();
 
-        setMaterials(result);
-
-      }
-
-    } catch (error) {
-
-      console.log(error);
-
-    }
+    setMaterials(result);
 
   }
 
   async function fetchVendors() {
 
-    try {
+    const response =
+      await fetch(
+        "/api/vendor-dept"
+      );
 
-      const response =
-        await fetch(
-          "/api/vendor-dept"
-        );
+    const result =
+      await response.json();
 
-      const result =
-        await response.json();
-
-      if (
-        Array.isArray(result)
-      ) {
-
-        setVendors(result);
-
-      }
-
-    } catch (error) {
-
-      console.log(error);
-
-    }
+    setVendors(result);
 
   }
 
   async function fetchInwardData() {
 
-    try {
+    const response =
+      await fetch(
+        "/api/inward"
+      );
 
-      const response =
-        await fetch(
-          "/api/inward"
-        );
+    const result =
+      await response.json();
 
-      const result =
-        await response.json();
-
-      if (
-        Array.isArray(result)
-      ) {
-
-        setInwardData(result);
-
-      }
-
-    } catch (error) {
-
-      console.log(error);
-
-    }
+    setInwardData(result);
 
   }
 
@@ -165,9 +120,7 @@ export default function InwardPage() {
     const selected =
       materials.find(
         (item: any) =>
-
-          item.material_code ===
-          value
+          item.material_code === value
       );
 
     setForm({
@@ -180,7 +133,7 @@ export default function InwardPage() {
         selected?.description || "",
 
       type_of_material:
-        selected?.type || "",
+        selected?.type_of_material || "",
 
       uom:
         selected?.uom || ""
@@ -191,111 +144,36 @@ export default function InwardPage() {
 
   async function handleSubmit() {
 
-    try {
-
-      const response =
-        await fetch(
-          "/api/inward",
-          {
-
-            method: "POST",
-
-            headers: {
-              "Content-Type":
-                "application/json"
-            },
-
-            body:
-              JSON.stringify(form)
-
-          }
-        );
-
-      const result =
-        await response.json();
-
-      if (result.success) {
-
-        alert(
-          "Inward Saved Successfully"
-        );
-
-        fetchInwardData();
-
-      }
-
-    } catch (error) {
-
-      console.log(error);
-
-    }
-
-  }
-
-  function downloadCSV() {
-
-    const headers = [
-
-      "Date",
-      "Month",
-      "Vendor",
-      "Invoice",
-      "Material Code",
-      "Description",
-      "Good Qty",
-      "NG Qty",
-      "UOM"
-
-    ];
-
-    const rows =
-      inwardData.map(
-        (item: any) => [
-
-          item.inward_date,
-          item.month,
-          item.vendor_name,
-          item.invoice_no,
-          item.material_code,
-          item.description,
-          item.g_qty,
-          item.ng_qty,
-          item.uom
-
-        ]
-      );
-
-    let csvContent =
-      headers.join(",") + "\n";
-
-    rows.forEach((row: any) => {
-
-      csvContent +=
-        row.join(",") + "\n";
-
-    });
-
-    const blob =
-      new Blob(
-        [csvContent],
+    const response =
+      await fetch(
+        "/api/inward",
         {
-          type:
-            "text/csv;charset=utf-8;"
+
+          method: "POST",
+
+          headers: {
+            "Content-Type":
+              "application/json"
+          },
+
+          body:
+            JSON.stringify(form)
+
         }
       );
 
-    const url =
-      URL.createObjectURL(blob);
+    const result =
+      await response.json();
 
-    const link =
-      document.createElement("a");
+    if (result.success) {
 
-    link.href = url;
+      alert(
+        "Inward Saved Successfully"
+      );
 
-    link.download =
-      "inward_report.csv";
+      fetchInwardData();
 
-    link.click();
+    }
 
   }
 
@@ -491,6 +369,20 @@ export default function InwardPage() {
 
         <input
           type="text"
+          placeholder="Tally Ref No"
+          value={form.tally_ref_no}
+          onChange={(e) =>
+            setForm({
+              ...form,
+              tally_ref_no:
+                e.target.value
+            })
+          }
+          className="border p-3 rounded"
+        />
+
+        <input
+          type="text"
           placeholder="Remarks"
           value={form.remarks}
           onChange={(e) =>
@@ -519,188 +411,6 @@ export default function InwardPage() {
       >
         Save Inward
       </button>
-
-      <div className="flex gap-4 mb-4">
-
-        <input
-          type="date"
-          value={fromDate}
-          onChange={(e) =>
-            setFromDate(
-              e.target.value
-            )
-          }
-          className="border p-2 rounded"
-        />
-
-        <input
-          type="date"
-          value={toDate}
-          onChange={(e) =>
-            setToDate(
-              e.target.value
-            )
-          }
-          className="border p-2 rounded"
-        />
-
-        <button
-          onClick={downloadCSV}
-          className="
-            bg-green-600
-            text-white
-            px-4
-            py-2
-            rounded
-          "
-        >
-          Download CSV
-        </button>
-
-      </div>
-
-      <div className="overflow-x-auto">
-
-        <table className="w-full border border-collapse text-sm">
-
-          <thead>
-
-            <tr className="bg-gray-200">
-
-              <th className="border p-2">
-                Date
-              </th>
-
-              <th className="border p-2">
-                Month
-              </th>
-
-              <th className="border p-2">
-                Vendor
-              </th>
-
-              <th className="border p-2">
-                Invoice No
-              </th>
-
-              <th className="border p-2">
-                Material Code
-              </th>
-
-              <th className="border p-2">
-                Description
-              </th>
-
-              <th className="border p-2">
-                Type
-              </th>
-
-              <th className="border p-2">
-                G Qty
-              </th>
-
-              <th className="border p-2">
-                NG Qty
-              </th>
-
-              <th className="border p-2">
-                UOM
-              </th>
-
-              <th className="border p-2">
-                Remarks
-              </th>
-
-            </tr>
-
-          </thead>
-
-          <tbody>
-
-            {inwardData.map(
-              (
-                item: any,
-                index: number
-              ) => (
-
-                <tr key={index}>
-
-                  <td className="border p-2">
-                    {
-                      item.inward_date
-                    }
-                  </td>
-
-                  <td className="border p-2">
-                    {
-                      item.month
-                    }
-                  </td>
-
-                  <td className="border p-2">
-                    {
-                      item.vendor_name
-                    }
-                  </td>
-
-                  <td className="border p-2">
-                    {
-                      item.invoice_no
-                    }
-                  </td>
-
-                  <td className="border p-2 font-bold">
-                    {
-                      item.material_code
-                    }
-                  </td>
-
-                  <td className="border p-2">
-                    {
-                      item.description
-                    }
-                  </td>
-
-                  <td className="border p-2">
-                    {
-                      item.type_of_material
-                    }
-                  </td>
-
-                  <td className="border p-2 text-green-600 font-bold">
-                    {
-                      item.g_qty
-                    }
-                  </td>
-
-                  <td className="border p-2 text-red-600 font-bold">
-                    {
-                      item.ng_qty
-                    }
-                  </td>
-
-                  <td className="border p-2">
-                    {
-                      item.uom
-                    }
-                  </td>
-
-                  <td className="border p-2">
-                    {
-                      item.remarks
-                    }
-                  </td>
-
-                </tr>
-
-              )
-            )}
-
-          </tbody>
-
-        </table>
-
-      </div>
 
     </div>
 
