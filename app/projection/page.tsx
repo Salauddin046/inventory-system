@@ -24,9 +24,9 @@ export default function ProjectionPage() {
 
     projection_action: "Allocate",
 
-    stock_action: "Not Issue",
+    stock_qty: "",
 
-    stock_qty: ""
+    stock_action: "Not Issue"
 
   });
 
@@ -143,10 +143,10 @@ export default function ProjectionPage() {
           projection_action:
             "Allocate",
 
-          stock_action:
-            "Not Issue",
+          stock_qty: "",
 
-          stock_qty: ""
+          stock_action:
+            "Not Issue"
 
         });
 
@@ -306,32 +306,8 @@ export default function ProjectionPage() {
             Allocate
           </option>
 
-          <option value="Unallocate">
-            Unallocate
-          </option>
-
-        </select>
-
-        <select
-          value={
-            form.stock_action
-          }
-          onChange={(e) =>
-            setForm({
-              ...form,
-              stock_action:
-                e.target.value
-            })
-          }
-          className="border p-2 rounded"
-        >
-
-          <option value="Not Issue">
-            Not Issue
-          </option>
-
-          <option value="Issue">
-            Issue
+          <option value="Un Allocate">
+            Un Allocate
           </option>
 
         </select>
@@ -350,11 +326,35 @@ export default function ProjectionPage() {
           className="border p-2 rounded"
         />
 
+        <select
+          value={
+            form.stock_action
+          }
+          onChange={(e) =>
+            setForm({
+              ...form,
+              stock_action:
+                e.target.value
+            })
+          }
+          className="border p-2 rounded"
+        >
+
+          <option value="Issue">
+            Issue
+          </option>
+
+          <option value="Not Issue">
+            Not Issue
+          </option>
+
+        </select>
+
         <button
           type="submit"
           className="bg-black text-white p-2 rounded"
         >
-          Save Projection
+          Submit
         </button>
 
       </form>
@@ -392,15 +392,19 @@ export default function ProjectionPage() {
               </th>
 
               <th className="border p-2">
-                Stock Action
-              </th>
-
-              <th className="border p-2">
                 Stock Qty
               </th>
 
               <th className="border p-2">
-                Allocated Qty
+                Stock Action
+              </th>
+
+              <th className="border p-2">
+                Outward Qty
+              </th>
+
+              <th className="border p-2">
+                Returned To Live Stock
               </th>
 
             </tr>
@@ -416,67 +420,117 @@ export default function ProjectionPage() {
                 (
                   item: any,
                   index: number
-                ) => (
+                ) => {
 
-                  <tr key={index}>
+                  const projectionQty =
+                    Number(
+                      item.projection_qty || 0
+                    );
 
-                    <td className="border p-2">
-                      {
-                        item.projection_month
-                      }
-                    </td>
+                  const stockQty =
+                    Number(
+                      item.stock_qty || 0
+                    );
 
-                    <td className="border p-2">
-                      {
-                        item.revision_no
-                      }
-                    </td>
+                  let outwardQty = 0;
 
-                    <td className="border p-2 font-bold">
-                      {
-                        item.material_code
-                      }
-                    </td>
+                  let returnedQty = 0;
 
-                    <td className="border p-2">
-                      {
-                        item.description
-                      }
-                    </td>
+                  if (
+                    item.stock_action ===
+                    "Issue"
+                  ) {
 
-                    <td className="border p-2 text-blue-600 font-bold">
-                      {
-                        item.projection_qty
-                      }
-                    </td>
+                    outwardQty =
+                      stockQty;
 
-                    <td className="border p-2">
-                      {
-                        item.projection_action
-                      }
-                    </td>
+                    returnedQty =
+                      projectionQty -
+                      stockQty;
 
-                    <td className="border p-2">
-                      {
-                        item.stock_action
-                      }
-                    </td>
+                  }
 
-                    <td className="border p-2">
-                      {
-                        item.stock_qty
-                      }
-                    </td>
+                  if (
+                    item.stock_action ===
+                    "Not Issue"
+                  ) {
 
-                    <td className="border p-2 text-green-600 font-bold">
-                      {
-                        item.allocated_qty
-                      }
-                    </td>
+                    outwardQty = 0;
 
-                  </tr>
+                    returnedQty =
+                      projectionQty;
 
-                )
+                  }
+
+                  return (
+
+                    <tr key={index}>
+
+                      <td className="border p-2">
+                        {
+                          item.projection_month
+                        }
+                      </td>
+
+                      <td className="border p-2">
+                        {
+                          item.revision_no
+                        }
+                      </td>
+
+                      <td className="border p-2 font-bold">
+                        {
+                          item.material_code
+                        }
+                      </td>
+
+                      <td className="border p-2">
+                        {
+                          item.description
+                        }
+                      </td>
+
+                      <td className="border p-2 text-blue-600 font-bold">
+                        {
+                          projectionQty
+                        }
+                      </td>
+
+                      <td className="border p-2">
+                        {
+                          item.projection_action
+                        }
+                      </td>
+
+                      <td className="border p-2">
+                        {
+                          stockQty
+                        }
+                      </td>
+
+                      <td className="border p-2">
+                        {
+                          item.stock_action
+                        }
+                      </td>
+
+                      <td className="border p-2 text-red-600 font-bold">
+                        {
+                          outwardQty
+                        }
+                      </td>
+
+                      <td className="border p-2 text-green-600 font-bold">
+                        {
+                          returnedQty
+                        }
+                      </td>
+
+                    </tr>
+
+                  );
+
+                }
               )
 
             ) : (
@@ -484,7 +538,7 @@ export default function ProjectionPage() {
               <tr>
 
                 <td
-                  colSpan={9}
+                  colSpan={10}
                   className="border p-4 text-center"
                 >
                   No Projection Data Found

@@ -31,11 +31,13 @@ export default function LiveStockPage() {
       const result =
         await response.json();
 
-      setStockData(
+      if (
         Array.isArray(result)
-          ? result
-          : []
-      );
+      ) {
+
+        setStockData(result);
+
+      }
 
     } catch (error) {
 
@@ -108,11 +110,19 @@ export default function LiveStockPage() {
               </th>
 
               <th className="border p-2">
+                Projection Qty
+              </th>
+
+              <th className="border p-2">
+                Allocated Qty
+              </th>
+
+              <th className="border p-2">
                 Outward Qty
               </th>
 
               <th className="border p-2">
-                Projection Qty
+                Returned Qty
               </th>
 
               <th className="border p-2">
@@ -125,63 +135,158 @@ export default function LiveStockPage() {
 
           <tbody>
 
-            {filteredData.map(
-              (
-                item: any,
-                index: number
-              ) => (
+            {filteredData &&
+            filteredData.length > 0 ? (
 
-                <tr key={index}>
+              filteredData.map(
+                (
+                  item: any,
+                  index: number
+                ) => {
 
-                  <td className="border p-2 font-bold">
-                    {
-                      item.material_code
-                    }
-                  </td>
+                  const inwardQty =
+                    Number(
+                      item.inward_qty || 0
+                    );
 
-                  <td className="border p-2">
-                    {
-                      item.description
-                    }
-                  </td>
+                  const projectionQty =
+                    Number(
+                      item.projection_qty || 0
+                    );
 
-                  <td className="border p-2 text-green-600 font-bold">
-                    {
-                      Number(
-                        item.inward_qty || 0
-                      )
-                    }
-                  </td>
+                  const stockQty =
+                    Number(
+                      item.stock_qty || 0
+                    );
 
-                  <td className="border p-2 text-red-600 font-bold">
-                    {
-                      Number(
-                        item.outward_qty || 0
-                      )
-                    }
-                  </td>
+                  let outwardQty = 0;
 
-                  <td className="border p-2 text-blue-600 font-bold">
-                    {
-                      Number(
-                        item.projection_qty || 0
-                      )
-                    }
-                  </td>
+                  let returnedQty = 0;
 
-                  <td className="border p-2 font-bold">
+                  let allocatedQty = 0;
 
-                    {
-                      Number(
-                        item.live_stock || 0
-                      )
-                    }
+                  if (
+                    item.projection_action ===
+                    "Allocate"
+                  ) {
 
-                  </td>
+                    allocatedQty =
+                      projectionQty;
 
-                </tr>
+                  }
 
+                  if (
+                    item.stock_action ===
+                    "Issue"
+                  ) {
+
+                    outwardQty =
+                      stockQty;
+
+                    returnedQty =
+                      projectionQty -
+                      stockQty;
+
+                  }
+
+                  if (
+                    item.stock_action ===
+                    "Not Issue"
+                  ) {
+
+                    returnedQty =
+                      projectionQty;
+
+                  }
+
+                  const liveStock =
+
+                    inwardQty
+
+                    -
+
+                    allocatedQty
+
+                    -
+
+                    outwardQty
+
+                    +
+
+                    returnedQty;
+
+                  return (
+
+                    <tr key={index}>
+
+                      <td className="border p-2 font-bold">
+                        {
+                          item.material_code
+                        }
+                      </td>
+
+                      <td className="border p-2">
+                        {
+                          item.description
+                        }
+                      </td>
+
+                      <td className="border p-2 text-blue-600 font-bold">
+                        {
+                          inwardQty
+                        }
+                      </td>
+
+                      <td className="border p-2">
+                        {
+                          projectionQty
+                        }
+                      </td>
+
+                      <td className="border p-2 text-yellow-600 font-bold">
+                        {
+                          allocatedQty
+                        }
+                      </td>
+
+                      <td className="border p-2 text-red-600 font-bold">
+                        {
+                          outwardQty
+                        }
+                      </td>
+
+                      <td className="border p-2 text-green-600 font-bold">
+                        {
+                          returnedQty
+                        }
+                      </td>
+
+                      <td className="border p-2 font-bold">
+                        {
+                          liveStock
+                        }
+                      </td>
+
+                    </tr>
+
+                  );
+
+                }
               )
+
+            ) : (
+
+              <tr>
+
+                <td
+                  colSpan={8}
+                  className="border p-4 text-center"
+                >
+                  No Live Stock Found
+                </td>
+
+              </tr>
+
             )}
 
           </tbody>
