@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 export default function OutwardPage() {
@@ -359,7 +360,7 @@ export default function OutwardPage() {
       new Date(dateString);
 
     return date.toLocaleDateString(
-      "en-IN"
+      "en-GB"
     );
 
   }
@@ -522,6 +523,26 @@ export default function OutwardPage() {
   return (
 
     <div className="p-6">
+
+      <div className="flex items-center gap-4 mb-4">
+
+        <Link href="/">
+
+          <button
+            className="
+              bg-gray-700
+              text-white
+              px-4
+              py-2
+              rounded
+            "
+          >
+            Back
+          </button>
+
+        </Link>
+
+      </div>
 
       <h1 className="text-3xl font-bold mb-6">
         Outward Entry
@@ -764,229 +785,6 @@ export default function OutwardPage() {
         </button>
 
       </form>
-
-      <div className="flex gap-4 mb-4">
-
-        <input
-          type="date"
-          value={dateFilter.from_date}
-          onChange={(e) =>
-            setDateFilter({
-              ...dateFilter,
-              from_date:
-                e.target.value
-            })
-          }
-          className="border p-2 rounded"
-        />
-
-        <input
-          type="date"
-          value={dateFilter.to_date}
-          onChange={(e) =>
-            setDateFilter({
-              ...dateFilter,
-              to_date:
-                e.target.value
-            })
-          }
-          className="border p-2 rounded"
-        />
-
-        <button
-          type="button"
-          onClick={downloadCSV}
-          className="bg-green-600 text-white px-4 py-2 rounded"
-        >
-          Download CSV
-        </button>
-
-      </div>
-
-      <div className="overflow-x-auto">
-
-        <table className="w-full border border-collapse text-sm">
-
-          <thead>
-
-            <tr className="bg-gray-200">
-
-              <th className="border p-2">
-                Req Date
-              </th>
-
-              <th className="border p-2">
-                Month
-              </th>
-
-              <th className="border p-2">
-                Req Person
-              </th>
-
-              <th className="border p-2">
-                Vendor / Dept
-              </th>
-
-              <th className="border p-2">
-                Job Card
-              </th>
-
-              <th className="border p-2">
-                Material Code
-              </th>
-
-              <th className="border p-2">
-                Description
-              </th>
-
-              <th className="border p-2">
-                Req Qty
-              </th>
-
-              <th className="border p-2">
-                G Qty
-              </th>
-
-              <th className="border p-2">
-                NG Qty
-              </th>
-
-              <th className="border p-2">
-                UOM
-              </th>
-
-              <th className="border p-2">
-                Issuance Date
-              </th>
-
-              <th className="border p-2">
-                Tally Ref
-              </th>
-
-              <th className="border p-2">
-                Remarks
-              </th>
-
-            </tr>
-
-          </thead>
-
-          <tbody>
-
-            {outwardData &&
-            outwardData.length > 0 ? (
-
-              outwardData.map(
-                (
-                  item: any,
-                  index: number
-                ) => (
-
-                  <tr key={index}>
-
-                    <td className="border p-2">
-                      {
-                        formatDate(
-                          item.req_date
-                        )
-                      }
-                    </td>
-
-                    <td className="border p-2">
-                      {item.month}
-                    </td>
-
-                    <td className="border p-2">
-                      {item.req_person}
-                    </td>
-
-                    <td className="border p-2">
-                      {
-                        item.to_vendor_dept
-                      }
-                    </td>
-
-                    <td className="border p-2">
-                      {
-                        item.job_card_po_no
-                      }
-                    </td>
-
-                    <td className="border p-2">
-                      {
-                        item.material_code
-                      }
-                    </td>
-
-                    <td className="border p-2">
-                      {
-                        item.material_description
-                      }
-                    </td>
-
-                    <td className="border p-2">
-                      {item.req_qty}
-                    </td>
-
-                    <td className="border p-2">
-                      {
-                        item.g_outward_qty
-                      }
-                    </td>
-
-                    <td className="border p-2">
-                      {
-                        item.ng_outward_qty
-                      }
-                    </td>
-
-                    <td className="border p-2">
-                      {item.uom}
-                    </td>
-
-                    <td className="border p-2">
-                      {
-                        formatDate(
-                          item.issuance_date
-                        )
-                      }
-                    </td>
-
-                    <td className="border p-2">
-                      {
-                        item.tally_ref_no
-                      }
-                    </td>
-
-                    <td className="border p-2">
-                      {item.remarks}
-                    </td>
-
-                  </tr>
-
-                )
-              )
-
-            ) : (
-
-              <tr>
-
-                <td
-                  colSpan={14}
-                  className="border p-4 text-center"
-                >
-                  No Outward Data Found
-                </td>
-
-              </tr>
-
-            )}
-
-          </tbody>
-
-        </table>
-
-      </div>
 
     </div>
 
