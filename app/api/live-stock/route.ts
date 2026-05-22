@@ -1,37 +1,135 @@
-LEFT JOIN (
+import { NextResponse } from "next/server";
+import sql from "@/lib/db";
 
-  SELECT
+export async function GET() {
 
-    material_code,
+  try {
 
-    SUM(
+    const data =
+      await sql`
 
-      CASE
+        SELECT
 
-        WHEN projection_action =
-        'Allocate'
+          m.material_code,
 
-        AND (
-          stock_action IS NULL
-          OR stock_action = ''
-        )
+          m.description,
 
-        THEN
-        projection_qty
+          COALESCE(
+            i.inward_qty,
+            0
+          ) AS inward_qty,
 
-        ELSE
-        0
+          COALESCE(
+            o.outward_qty,
+            0
+          ) AS outward_qty,
 
-      END
+          COALESCE(
+            p.projection_qty,
+            0
+          ) AS projection_qty
 
-    ) AS projection_qty
+        FROM material_master m
 
-  FROM projection_master
+        LEFT JOIN (
 
-  GROUP BY material_code
+          SELECT
 
-) p
+            material_code,
 
-ON
-m.material_code =
-p.material_code
+            SUM(
+              COALESCE(
+                g_qty,
+                0
+              )
+            ) AS inward_qty
+
+          FROM inward_transactions
+
+          GROUP BY material_code
+
+        ) i
+
+        ON
+        m.material_code =
+        i.material_code
+
+        LEFT JOIN (
+
+          SELECT
+
+            material_code,
+
+            SUM(
+              COALESCE(
+                g_outward_qty,
+                0
+              )
+            ) AS outward_qty
+
+          FROM outward_transactions
+
+          GROUP BY material_code
+
+        ) o
+
+        ON
+        m.material_code =
+        o.material_code
+
+        LEFT JOIN (
+
+          SELECT
+
+            material_code,
+
+            SUM(
+
+              CASE
+
+                WHEN projection_action =
+                'Allocate'
+
+                AND (
+                  stock_action IS NULL
+                  OR stock_action = ''
+                )
+
+                THEN
+                projection_qty
+
+                ELSE
+                0
+
+              END
+
+            ) AS projection_qty
+
+          FROM projection_master
+
+          GROUP BY material_code
+
+        ) p
+
+        ON
+        m.material_code =
+        p.material_code
+
+        ORDER BY
+        m.material_code ASC
+
+      `;
+
+    return NextResponse.json(
+      data
+    );
+
+  } catch (error: any) {
+
+    console.log(error);
+
+    return NextResponse.json([]);
+
+  }
+
+}
