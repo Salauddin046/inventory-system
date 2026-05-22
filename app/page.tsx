@@ -3,9 +3,9 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-export default function HomePage() {
+export default function DashboardPage() {
 
-  const [stats, setStats] =
+  const [dashboard, setDashboard] =
     useState({
 
       totalMaterials: 0,
@@ -16,7 +16,7 @@ export default function HomePage() {
 
       totalProjection: 0,
 
-      totalLiveStock: 0
+      liveStock: 0
 
     });
 
@@ -41,7 +41,34 @@ export default function HomePage() {
       const result =
         await response.json();
 
-      setStats(result);
+      setDashboard({
+
+        totalMaterials:
+          Number(
+            result?.totalMaterials || 0
+          ),
+
+        totalInward:
+          Number(
+            result?.totalInward || 0
+          ),
+
+        totalOutward:
+          Number(
+            result?.totalOutward || 0
+          ),
+
+        totalProjection:
+          Number(
+            result?.totalProjection || 0
+          ),
+
+        liveStock:
+          Number(
+            result?.liveStock || 0
+          )
+
+      });
 
     } catch (error) {
 
@@ -56,80 +83,130 @@ export default function HomePage() {
     {
       title: "Total Materials",
       value:
-        stats.totalMaterials,
+        dashboard.totalMaterials,
       color:
-        "bg-blue-600"
+        "from-blue-500 to-indigo-600"
     },
 
     {
       title: "Total Inward",
       value:
-        stats.totalInward,
+        dashboard.totalInward,
       color:
-        "bg-green-600"
+        "from-green-500 to-green-700"
     },
 
     {
       title: "Total Outward",
       value:
-        stats.totalOutward,
+        dashboard.totalOutward,
       color:
-        "bg-red-600"
+        "from-red-500 to-red-700"
     },
 
     {
       title: "Projection Qty",
       value:
-        stats.totalProjection,
+        dashboard.totalProjection,
       color:
-        "bg-yellow-500"
+        "from-yellow-500 to-yellow-700"
     },
 
     {
       title: "Live Stock",
       value:
-        stats.totalLiveStock,
+        dashboard.liveStock,
       color:
-        "bg-purple-600"
+        "from-purple-500 to-fuchsia-700"
+    }
+
+  ];
+
+  const modules = [
+
+    {
+      title: "CAT Master",
+      description:
+        "Manage Material Master Data",
+      link: "/cat-master"
+    },
+
+    {
+      title: "Inward Entry",
+      description:
+        "Add Incoming Material Stock",
+      link: "/inward"
+    },
+
+    {
+      title: "Outward Entry",
+      description:
+        "Issue Material Stock",
+      link: "/outward"
+    },
+
+    {
+      title: "Projection Upload",
+      description:
+        "Upload Projection Data",
+      link: "/projection-upload"
+    },
+
+    {
+      title: "Projection Planning",
+      description:
+        "Allocate & Issue Projection",
+      link: "/projection"
+    },
+
+    {
+      title: "Live Stock",
+      description:
+        "Real-Time Stock Monitoring",
+      link: "/live-stock"
     }
 
   ];
 
   return (
 
-    <div className="min-h-screen bg-gray-100 p-6">
+    <div className="p-6 bg-gray-100 min-h-screen">
 
-      <div className="mb-8">
+      <h1 className="text-5xl font-bold mb-2">
+        Inventory Dashboard
+      </h1>
 
-        <h1 className="text-4xl font-bold">
-          Inventory Dashboard
-        </h1>
+      <p className="text-gray-600 mb-10 text-xl">
+        Live Inventory Monitoring System
+      </p>
 
-        <p className="text-gray-600 mt-2">
-          Live Inventory Monitoring System
-        </p>
-
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-10">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-10">
 
         {cards.map(
-          (
-            card,
-            index
-          ) => (
+          (card, index) => (
 
             <div
               key={index}
-              className={`${card.color} text-white rounded-xl shadow-lg p-6`}
+              className={`
+                bg-gradient-to-r
+                ${card.color}
+                text-white
+                rounded-2xl
+                shadow-lg
+                p-6
+              `}
             >
 
-              <h2 className="text-lg font-semibold">
+              <h2 className="text-2xl font-semibold mb-4">
                 {card.title}
               </h2>
 
-              <p className="text-3xl font-bold mt-4">
-                {card.value}
+              <p className="text-5xl font-bold">
+
+                {Number(
+                  card.value || 0
+                )}
+
               </p>
 
             </div>
@@ -139,97 +216,45 @@ export default function HomePage() {
 
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 
-        <Link
-          href="/cat-master"
-          className="bg-white rounded-xl shadow p-6 hover:shadow-xl transition"
-        >
+        {modules.map(
+          (module, index) => (
 
-          <h2 className="text-2xl font-bold mb-2">
-            CAT Master
-          </h2>
+            <Link
+              key={index}
+              href={module.link}
+            >
 
-          <p className="text-gray-600">
-            Manage Material Master Data
-          </p>
+              <div
+                className="
+                  bg-white
+                  rounded-2xl
+                  shadow-md
+                  hover:shadow-xl
+                  transition
+                  duration-300
+                  p-8
+                  cursor-pointer
+                "
+              >
 
-        </Link>
+                <h2 className="text-4xl font-bold mb-4">
+                  {module.title}
+                </h2>
 
-        <Link
-          href="/inward"
-          className="bg-white rounded-xl shadow p-6 hover:shadow-xl transition"
-        >
+                <p className="text-gray-600 text-xl">
+                  {
+                    module.description
+                  }
+                </p>
 
-          <h2 className="text-2xl font-bold mb-2">
-            Inward Entry
-          </h2>
+              </div>
 
-          <p className="text-gray-600">
-            Add Incoming Material Stock
-          </p>
+            </Link>
 
-        </Link>
-
-        <Link
-          href="/outward"
-          className="bg-white rounded-xl shadow p-6 hover:shadow-xl transition"
-        >
-
-          <h2 className="text-2xl font-bold mb-2">
-            Outward Entry
-          </h2>
-
-          <p className="text-gray-600">
-            Issue Material Stock
-          </p>
-
-        </Link>
-
-        <Link
-          href="/projection-upload"
-          className="bg-white rounded-xl shadow p-6 hover:shadow-xl transition"
-        >
-
-          <h2 className="text-2xl font-bold mb-2">
-            Projection Upload
-          </h2>
-
-          <p className="text-gray-600">
-            Upload Projection Data
-          </p>
-
-        </Link>
-
-        <Link
-          href="/projection"
-          className="bg-white rounded-xl shadow p-6 hover:shadow-xl transition"
-        >
-
-          <h2 className="text-2xl font-bold mb-2">
-            Projection Planning
-          </h2>
-
-          <p className="text-gray-600">
-            Allocate & Issue Projection
-          </p>
-
-        </Link>
-
-        <Link
-          href="/live-stock"
-          className="bg-white rounded-xl shadow p-6 hover:shadow-xl transition"
-        >
-
-          <h2 className="text-2xl font-bold mb-2">
-            Live Stock
-          </h2>
-
-          <p className="text-gray-600">
-            Real-Time Stock Monitoring
-          </p>
-
-        </Link>
+          )
+        )}
 
       </div>
 
