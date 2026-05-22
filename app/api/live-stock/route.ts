@@ -42,7 +42,7 @@ export async function GET() {
 
         ) AS live_stock
 
-      FROM materials m
+      FROM material_master m
 
       LEFT JOIN (
 
