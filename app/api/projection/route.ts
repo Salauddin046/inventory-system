@@ -1,26 +1,28 @@
 import { NextResponse } from "next/server";
+import sql from "@/lib/db";
 
-export async function POST() {
+export async function GET() {
 
   try {
 
-    return NextResponse.json({
+    const data =
+      await sql`
 
-      success: true
+        SELECT *
 
-    });
+        FROM projection_master
+
+        ORDER BY id DESC
+
+      `;
+
+    return NextResponse.json(data);
 
   } catch (error: any) {
 
     console.log(error);
 
-    return NextResponse.json({
-
-      success: false,
-
-      error: error.message
-
-    });
+    return NextResponse.json([]);
 
   }
 
