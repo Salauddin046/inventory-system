@@ -1,144 +1,37 @@
-import { NextResponse } from "next/server";
-import sql from "@/lib/db";
+LEFT JOIN (
 
-export async function GET() {
+  SELECT
 
-  try {
+    material_code,
 
-    const data =
-      await sql`
+    SUM(
 
-        SELECT
+      CASE
 
-          m.material_code,
+        WHEN projection_action =
+        'Allocate'
 
-          m.description,
+        AND (
+          stock_action IS NULL
+          OR stock_action = ''
+        )
 
-          COALESCE(
-            i.inward_qty,
-            0
-          ) AS inward_qty,
+        THEN
+        projection_qty
 
-          COALESCE(
-            o.outward_qty,
-            0
-          ) AS outward_qty,
+        ELSE
+        0
 
-          COALESCE(
-            p.pending_projection_qty,
-            0
-          ) AS projection_qty
+      END
 
-        FROM material_master m
+    ) AS projection_qty
 
-        LEFT JOIN (
+  FROM projection_master
 
-          SELECT
+  GROUP BY material_code
 
-            material_code,
+) p
 
-            SUM(
-              COALESCE(
-                g_qty,
-                0
-              )
-            ) AS inward_qty
-
-          FROM inward_transactions
-
-          GROUP BY material_code
-
-        ) i
-
-        ON
-        m.material_code =
-        i.material_code
-
-        LEFT JOIN (
-
-          SELECT
-
-            material_code,
-
-            SUM(
-              COALESCE(
-                g_outward_qty,
-                0
-              )
-            ) AS outward_qty
-
-          FROM outward_transactions
-
-          GROUP BY material_code
-
-        ) o
-
-        ON
-        m.material_code =
-        o.material_code
-
-        LEFT JOIN (
-
-          SELECT
-
-            material_code,
-
-            SUM(
-
-              CASE
-
-                WHEN stock_action =
-                'Issue'
-
-                THEN
-
-                  projection_qty -
-                  stock_qty
-
-                WHEN stock_action =
-                'Not Issue'
-
-                THEN
-
-                  0
-
-                ELSE
-
-                  projection_qty
-
-              END
-
-            ) AS pending_projection_qty
-
-          FROM projection_master
-
-          WHERE
-          projection_action =
-          'Allocate'
-
-          GROUP BY material_code
-
-        ) p
-
-        ON
-        m.material_code =
-        p.material_code
-
-        ORDER BY
-        m.material_code ASC
-
-      `;
-
-    return NextResponse.json(
-      data
-    );
-
-  } catch (error: any) {
-
-    console.log(error);
-
-    return NextResponse.json([]);
-
-  }
-
-}
+ON
+m.material_code =
+p.material_code
