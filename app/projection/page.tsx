@@ -1,25 +1,52 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
-export default function ProjectionPage() {
+export default function ProjectionMasterPage() {
 
   const [projectionData, setProjectionData] =
     useState<any[]>([]);
 
+  const [materials, setMaterials] =
+    useState<any[]>([]);
+
+  const [form, setForm] =
+    useState({
+
+      projection_month: "",
+
+      revision_no: "",
+
+      material_code: "",
+
+      description: "",
+
+      projection_qty: "",
+
+      projection_action: "",
+
+      stock_qty: "",
+
+      stock_action: ""
+
+    });
+
   useEffect(() => {
 
-    fetchData();
+    fetchProjectionData();
+
+    fetchMaterials();
 
   }, []);
 
-  async function fetchData() {
+  async function fetchProjectionData() {
 
     try {
 
       const response =
         await fetch(
-          "/api/projection",
+          "/api/projection-master",
           {
             cache: "no-store"
           }
@@ -46,40 +73,23 @@ export default function ProjectionPage() {
 
   }
 
-  async function updateProjection(
-    data: any
-  ) {
+  async function fetchMaterials() {
 
     try {
 
       const response =
         await fetch(
-          "/api/projection",
-          {
-
-            method: "PUT",
-
-            headers: {
-              "Content-Type":
-                "application/json"
-            },
-
-            body:
-              JSON.stringify(data)
-
-          }
+          "/api/materials"
         );
 
       const result =
         await response.json();
 
-      if (result.success) {
+      if (
+        Array.isArray(result)
+      ) {
 
-        alert(
-          "Updated Successfully"
-        );
-
-        fetchData();
+        setMaterials(result);
 
       }
 
@@ -91,31 +101,393 @@ export default function ProjectionPage() {
 
   }
 
-  function handleChange(
-    index: number,
-    field: string,
+  function handleMaterialChange(
     value: string
   ) {
 
-    const updated =
-      [...projectionData];
+    const selected =
+      materials.find(
+        (item: any) =>
+          item.material_code === value
+      );
 
-    updated[index][field] =
-      value;
+    setForm({
 
-    setProjectionData(
-      updated
-    );
+      ...form,
+
+      material_code: value,
+
+      description:
+        selected?.description || ""
+
+    });
+
+  }
+
+  async function handleProjectionSubmit() {
+
+    try {
+
+      const response =
+        await fetch(
+          "/api/projection-master",
+          {
+
+            method: "POST",
+
+            headers: {
+              "Content-Type":
+                "application/json"
+            },
+
+            body:
+              JSON.stringify({
+
+                ...form,
+
+                type:
+                  "projection"
+
+              })
+
+          }
+        );
+
+      const result =
+        await response.json();
+
+      if (result.success) {
+
+        alert(
+          "Projection Updated"
+        );
+
+        fetchProjectionData();
+
+      }
+
+    } catch (error) {
+
+      console.log(error);
+
+    }
+
+  }
+
+  async function handleStockSubmit() {
+
+    try {
+
+      const response =
+        await fetch(
+          "/api/projection-master",
+          {
+
+            method: "POST",
+
+            headers: {
+              "Content-Type":
+                "application/json"
+            },
+
+            body:
+              JSON.stringify({
+
+                ...form,
+
+                type:
+                  "stock"
+
+              })
+
+          }
+        );
+
+      const result =
+        await response.json();
+
+      if (result.success) {
+
+        alert(
+          "Stock Action Updated"
+        );
+
+        fetchProjectionData();
+
+      }
+
+    } catch (error) {
+
+      console.log(error);
+
+    }
+
+  }
+
+  async function handleClear(
+    id: number
+  ) {
+
+    try {
+
+      const response =
+        await fetch(
+          `/api/projection-master?id=${id}`,
+          {
+
+            method: "DELETE"
+
+          }
+        );
+
+      const result =
+        await response.json();
+
+      if (result.success) {
+
+        alert(
+          "Projection Cleared"
+        );
+
+        fetchProjectionData();
+
+      }
+
+    } catch (error) {
+
+      console.log(error);
+
+    }
 
   }
 
   return (
 
-    <div className="p-6">
+    <div className="p-4">
 
-      <h1 className="text-3xl font-bold mb-6">
+      <div className="flex items-center gap-4 mb-4">
+
+        <Link href="/">
+
+          <button
+            className="
+              bg-gray-700
+              text-white
+              px-4
+              py-2
+              rounded
+            "
+          >
+            Back
+          </button>
+
+        </Link>
+
+      </div>
+
+      <h1 className="text-4xl font-bold mb-6">
         Projection Master
       </h1>
+
+      <div className="grid grid-cols-4 gap-4 mb-6">
+
+        <input
+          type="text"
+          placeholder="Projection Month"
+          value={form.projection_month}
+          onChange={(e) =>
+            setForm({
+              ...form,
+              projection_month:
+                e.target.value
+            })
+          }
+          className="border p-3 rounded"
+        />
+
+        <input
+          type="text"
+          placeholder="Revision No"
+          value={form.revision_no}
+          onChange={(e) =>
+            setForm({
+              ...form,
+              revision_no:
+                e.target.value
+            })
+          }
+          className="border p-3 rounded"
+        />
+
+        <select
+          value={form.material_code}
+          onChange={(e) =>
+            handleMaterialChange(
+              e.target.value
+            )
+          }
+          className="border p-3 rounded"
+        >
+
+          <option value="">
+            Select Material
+          </option>
+
+          {materials.map(
+            (item: any) => (
+
+              <option
+                key={item.id}
+                value={
+                  item.material_code
+                }
+              >
+
+                {
+                  item.material_code
+                }
+
+              </option>
+
+            )
+          )}
+
+        </select>
+
+        <input
+          type="text"
+          value={form.description}
+          readOnly
+          placeholder="Description"
+          className="
+            border
+            p-3
+            rounded
+            bg-gray-100
+          "
+        />
+
+        <input
+          type="number"
+          placeholder="Projection Qty"
+          value={form.projection_qty}
+          onChange={(e) =>
+            setForm({
+              ...form,
+              projection_qty:
+                e.target.value
+            })
+          }
+          className="border p-3 rounded"
+        />
+
+        <select
+          value={
+            form.projection_action
+          }
+          onChange={(e) =>
+            setForm({
+              ...form,
+              projection_action:
+                e.target.value
+            })
+          }
+          className="border p-3 rounded"
+        >
+
+          <option value="">
+            Projection Action
+          </option>
+
+          <option value="Allocate">
+            Allocate
+          </option>
+
+          <option value="Un Allocate">
+            Un Allocate
+          </option>
+
+        </select>
+
+        <input
+          type="number"
+          placeholder="Stock Qty"
+          value={form.stock_qty}
+          onChange={(e) =>
+            setForm({
+              ...form,
+              stock_qty:
+                e.target.value
+            })
+          }
+          className="border p-3 rounded"
+        />
+
+        <select
+          value={form.stock_action}
+          onChange={(e) =>
+            setForm({
+              ...form,
+              stock_action:
+                e.target.value
+            })
+          }
+          className="border p-3 rounded"
+        >
+
+          <option value="">
+            Stock Action
+          </option>
+
+          <option value="Issue">
+            Issue
+          </option>
+
+          <option value="Not Issue">
+            Not Issue
+          </option>
+
+          <option value="Clear">
+            Clear
+          </option>
+
+        </select>
+
+      </div>
+
+      <div className="flex gap-4 mb-6">
+
+        <button
+          onClick={
+            handleProjectionSubmit
+          }
+          className="
+            bg-blue-600
+            text-white
+            px-6
+            py-3
+            rounded
+          "
+        >
+          Projection Submit
+        </button>
+
+        <button
+          onClick={
+            handleStockSubmit
+          }
+          className="
+            bg-green-600
+            text-white
+            px-6
+            py-3
+            rounded
+          "
+        >
+          Stock Submit
+        </button>
+
+      </div>
 
       <div className="overflow-x-auto">
 
@@ -125,56 +497,40 @@ export default function ProjectionPage() {
 
             <tr className="bg-gray-200">
 
-              <th className="border p-2">
+              <th className="border p-3 text-center">
                 Projection Month
               </th>
 
-              <th className="border p-2">
+              <th className="border p-3 text-center">
                 Revision No
               </th>
 
-              <th className="border p-2">
+              <th className="border p-3 text-center">
                 Material Code
               </th>
 
-              <th className="border p-2">
+              <th className="border p-3 text-center">
                 Description
               </th>
 
-              <th className="border p-2">
+              <th className="border p-3 text-center">
                 Projection Qty
               </th>
 
-              <th className="border p-2">
+              <th className="border p-3 text-center">
                 Projection Action
               </th>
 
-              <th className="border p-2">
-                Projection Submit
-              </th>
-
-              <th className="border p-2">
+              <th className="border p-3 text-center">
                 Stock Qty
               </th>
 
-              <th className="border p-2">
+              <th className="border p-3 text-center">
                 Stock Action
               </th>
 
-              <th className="border p-2">
-                Stock Submit
-              </th>
-
-              <th className="border p-2">
-                Outward Qty
-              </th>
-
-              <th className="border p-2">
-                Returned Live Stock
-              </th>
-
-              <th className="border p-2">
-                Clear Projection
+              <th className="border p-3 text-center">
+                Clear
               </th>
 
             </tr>
@@ -183,308 +539,89 @@ export default function ProjectionPage() {
 
           <tbody>
 
-            {projectionData &&
-            projectionData.length > 0 ? (
+            {projectionData.length >
+            0 ? (
 
               projectionData.map(
                 (
                   item: any,
                   index: number
-                ) => {
+                ) => (
 
-                  const projectionQty =
-                    Number(
-                      item.projection_qty || 0
-                    );
+                  <tr key={index}>
 
-                  const stockQty =
-                    Number(
-                      item.stock_qty || 0
-                    );
+                    <td className="border p-3 text-center">
+                      {
+                        item.projection_month
+                      }
+                    </td>
 
-                  let outwardQty = 0;
+                    <td className="border p-3 text-center">
+                      {
+                        item.revision_no
+                      }
+                    </td>
 
-                  let returnedQty = 0;
+                    <td className="border p-3 text-center font-bold">
+                      {
+                        item.material_code
+                      }
+                    </td>
 
-                  if (
-                    item.stock_action ===
-                    "Issue"
-                  ) {
+                    <td className="border p-3 text-center">
+                      {
+                        item.description
+                      }
+                    </td>
 
-                    outwardQty =
-                      stockQty;
+                    <td className="border p-3 text-center text-blue-600 font-bold">
+                      {
+                        item.projection_qty
+                      }
+                    </td>
 
-                    returnedQty =
-                      projectionQty -
-                      stockQty;
+                    <td className="border p-3 text-center">
+                      {
+                        item.projection_action
+                      }
+                    </td>
 
-                  }
+                    <td className="border p-3 text-center text-green-600 font-bold">
+                      {
+                        item.stock_qty
+                      }
+                    </td>
 
-                  if (
-                    item.stock_action ===
-                    "Not Issue"
-                  ) {
+                    <td className="border p-3 text-center">
+                      {
+                        item.stock_action
+                      }
+                    </td>
 
-                    outwardQty = 0;
+                    <td className="border p-3 text-center">
 
-                    returnedQty =
-                      projectionQty;
-
-                  }
-
-                  return (
-
-                    <tr key={item.id}>
-
-                      <td className="border p-2">
-                        {
-                          item.projection_month
+                      <button
+                        onClick={() =>
+                          handleClear(
+                            item.id
+                          )
                         }
-                      </td>
-
-                      <td className="border p-2">
-                        {
-                          item.revision_no
-                        }
-                      </td>
-
-                      <td className="border p-2 font-bold">
-                        {
-                          item.material_code
-                        }
-                      </td>
-
-                      <td className="border p-2">
-                        {
-                          item.description
-                        }
-                      </td>
-
-                      <td className="border p-2 text-blue-600 font-bold">
-                        {
-                          projectionQty
-                        }
-                      </td>
-
-                      <td className="border p-2">
-
-                        <select
-                          value={
-                            item.projection_action || ""
-                          }
-
-                          disabled={
-                            item.stock_action ===
-                            "Issue" ||
-
-                            item.stock_action ===
-                            "Not Issue"
-                          }
-
-                          onChange={(e) =>
-                            handleChange(
-                              index,
-                              "projection_action",
-                              e.target.value
-                            )
-                          }
-
-                          className="border p-1 rounded w-full"
-                        >
-
-                          <option value="">
-                            Select
-                          </option>
-
-                          <option value="Allocate">
-                            Allocate
-                          </option>
-
-                          <option value="Un Allocate">
-                            Un Allocate
-                          </option>
-
-                        </select>
-
-                      </td>
-
-                      <td className="border p-2">
-
-                        <button
-                          onClick={() =>
-                            updateProjection({
-
-                              id: item.id,
-
-                              projection_action:
-                                item.projection_action
-
-                            })
-                          }
-
-                          className="bg-blue-600 text-white px-3 py-1 rounded"
-                        >
-                          Submit
-                        </button>
-
-                      </td>
-
-                      <td className="border p-2">
-
-                        <input
-                          type="number"
-
-                          value={
-                            item.stock_qty || ""
-                          }
-
-                          onChange={(e) =>
-                            handleChange(
-                              index,
-                              "stock_qty",
-                              e.target.value
-                            )
-                          }
-
-                          className="border p-1 rounded w-full"
-                        />
-
-                      </td>
-
-                      <td className="border p-2">
-
-                        <select
-                          value={
-                            item.stock_action || ""
-                          }
-
-                          onChange={(e) =>
-                            handleChange(
-                              index,
-                              "stock_action",
-                              e.target.value
-                            )
-                          }
-
-                          className="border p-1 rounded w-full"
-                        >
-
-                          <option value="">
-                            Select
-                          </option>
-
-                          <option value="Issue">
-                            Issue
-                          </option>
-
-                          <option value="Not Issue">
-                            Not Issue
-                          </option>
-
-                        </select>
-
-                      </td>
-
-                      <td className="border p-2">
-
-                        <button
-                          onClick={() =>
-                            updateProjection({
-
-                              id: item.id,
-
-                              stock_qty:
-                                item.stock_qty,
-
-                              stock_action:
-                                item.stock_action
-
-                            })
-                          }
-
-                          className="bg-black text-white px-3 py-1 rounded"
-                        >
-                          Submit
-                        </button>
-
-                      </td>
-
-                      <td className="border p-2 text-red-600 font-bold">
-                        {
-                          outwardQty
-                        }
-                      </td>
-
-                      <td className="border p-2 text-green-600 font-bold">
-                        {
-                          returnedQty
-                        }
-                      </td>
-
-                      <td className="border p-2">
-
-                        <button
-
-                          onClick={async () => {
-
-                            try {
-
-                              const response =
-                                await fetch(
-                                  "/api/projection",
-                                  {
-
-                                    method: "DELETE",
-
-                                    headers: {
-                                      "Content-Type":
-                                        "application/json"
-                                    },
-
-                                    body:
-                                      JSON.stringify({
-                                        id: item.id
-                                      })
-
-                                  }
-                                );
-
-                              const result =
-                                await response.json();
-
-                              if (result.success) {
-
-                                alert(
-                                  "Projection Cleared Successfully"
-                                );
-
-                                fetchData();
-
-                              }
-
-                            } catch (error) {
-
-                              console.log(error);
-
-                            }
-
-                          }}
-
-                          className="bg-red-600 text-white px-3 py-1 rounded"
-
-                        >
-
-                          Clear
-
-                        </button>
-
-                      </td>
-
-                    </tr>
-
-                  );
-
-                }
+                        className="
+                          bg-red-600
+                          text-white
+                          px-3
+                          py-1
+                          rounded
+                        "
+                      >
+                        Clear
+                      </button>
+
+                    </td>
+
+                  </tr>
+
+                )
               )
 
             ) : (
@@ -492,10 +629,14 @@ export default function ProjectionPage() {
               <tr>
 
                 <td
-                  colSpan={13}
-                  className="border p-4 text-center"
+                  colSpan={9}
+                  className="
+                    border
+                    p-4
+                    text-center
+                  "
                 >
-                  No Projection Data Found
+                  No Projection Data
                 </td>
 
               </tr>
