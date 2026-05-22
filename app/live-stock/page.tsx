@@ -110,19 +110,11 @@ export default function LiveStockPage() {
               </th>
 
               <th className="border p-2">
-                Projection Qty
-              </th>
-
-              <th className="border p-2">
-                Allocated Qty
-              </th>
-
-              <th className="border p-2">
                 Outward Qty
               </th>
 
               <th className="border p-2">
-                Returned Qty
+                Projection Qty
               </th>
 
               <th className="border p-2">
@@ -149,31 +141,9 @@ export default function LiveStockPage() {
                       item.inward_qty || 0
                     );
 
-                  const projectionQty =
-                    Number(
-                      item.projection_qty || 0
-                    );
-
-                  const stockQty =
-                    Number(
-                      item.stock_qty || 0
-                    );
-
                   let outwardQty = 0;
 
-                  let returnedQty = 0;
-
-                  let allocatedQty = 0;
-
-                  if (
-                    item.projection_action ===
-                    "Allocate"
-                  ) {
-
-                    allocatedQty =
-                      projectionQty;
-
-                  }
+                  let projectionQty = 0;
 
                   if (
                     item.stock_action ===
@@ -181,11 +151,15 @@ export default function LiveStockPage() {
                   ) {
 
                     outwardQty =
-                      stockQty;
+                      Number(
+                        item.stock_qty || 0
+                      );
 
-                    returnedQty =
-                      projectionQty -
-                      stockQty;
+                    projectionQty =
+                      Number(
+                        item.projection_qty || 0
+                      ) -
+                      outwardQty;
 
                   }
 
@@ -194,8 +168,30 @@ export default function LiveStockPage() {
                     "Not Issue"
                   ) {
 
-                    returnedQty =
-                      projectionQty;
+                    outwardQty = 0;
+
+                    projectionQty = 0;
+
+                  }
+
+                  if (
+                    item.projection_action ===
+                    "Allocate"
+                  ) {
+
+                    projectionQty =
+                      Number(
+                        item.projection_qty || 0
+                      );
+
+                  }
+
+                  if (
+                    item.projection_action ===
+                    "Un Allocate"
+                  ) {
+
+                    projectionQty = 0;
 
                   }
 
@@ -205,15 +201,11 @@ export default function LiveStockPage() {
 
                     -
 
-                    allocatedQty
+                    outwardQty
 
                     -
 
-                    outwardQty
-
-                    +
-
-                    returnedQty;
+                    projectionQty;
 
                   return (
 
@@ -237,31 +229,19 @@ export default function LiveStockPage() {
                         }
                       </td>
 
-                      <td className="border p-2">
-                        {
-                          projectionQty
-                        }
-                      </td>
-
-                      <td className="border p-2 text-yellow-600 font-bold">
-                        {
-                          allocatedQty
-                        }
-                      </td>
-
                       <td className="border p-2 text-red-600 font-bold">
                         {
                           outwardQty
                         }
                       </td>
 
-                      <td className="border p-2 text-green-600 font-bold">
+                      <td className="border p-2 text-yellow-600 font-bold">
                         {
-                          returnedQty
+                          projectionQty
                         }
                       </td>
 
-                      <td className="border p-2 font-bold">
+                      <td className="border p-2 text-green-600 font-bold">
                         {
                           liveStock
                         }
@@ -279,7 +259,7 @@ export default function LiveStockPage() {
               <tr>
 
                 <td
-                  colSpan={8}
+                  colSpan={6}
                   className="border p-4 text-center"
                 >
                   No Live Stock Found
