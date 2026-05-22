@@ -23,7 +23,7 @@ export default function ProjectionMasterPage() {
 
       const response =
         await fetch(
-          "/api/projection-master",
+          "/api/projection",
           {
             cache: "no-store"
           }

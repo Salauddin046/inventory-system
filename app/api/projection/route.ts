@@ -10,7 +10,7 @@ export async function GET() {
 
         SELECT *
 
-        FROM projection_upload
+        FROM projection_master
 
         ORDER BY id DESC
 
