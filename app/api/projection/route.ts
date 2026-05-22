@@ -16,13 +16,68 @@ export async function GET() {
 
       `;
 
-    return NextResponse.json(data);
+    return NextResponse.json(
+      data
+    );
 
   } catch (error: any) {
 
     console.log(error);
 
     return NextResponse.json([]);
+
+  }
+
+}
+
+export async function PUT(
+  request: Request
+) {
+
+  try {
+
+    const body =
+      await request.json();
+
+    await sql`
+
+      UPDATE projection_master
+
+      SET
+
+        projection_action =
+        ${body.projection_action},
+
+        stock_qty =
+        ${Number(
+          body.stock_qty || 0
+        )},
+
+        stock_action =
+        ${body.stock_action}
+
+      WHERE id =
+      ${body.id}
+
+    `;
+
+    return NextResponse.json({
+
+      success: true
+
+    });
+
+  } catch (error: any) {
+
+    console.log(error);
+
+    return NextResponse.json({
+
+      success: false,
+
+      error: error.message
+
+    });
 
   }
 
