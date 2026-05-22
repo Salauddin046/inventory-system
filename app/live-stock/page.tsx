@@ -118,35 +118,35 @@ export default function LiveStockPage() {
 
             <tr className="bg-gray-200">
 
-              <th className="border p-3">
+              <th className="border p-3 text-center">
                 Material Code
               </th>
 
-              <th className="border p-3">
+              <th className="border p-3 text-center">
                 Description
               </th>
 
-              <th className="border p-3">
+              <th className="border p-3 text-center">
                 Good Inward
               </th>
 
-              <th className="border p-3">
+              <th className="border p-3 text-center">
                 NG Inward
               </th>
 
-              <th className="border p-3">
+              <th className="border p-3 text-center">
                 Good Outward
               </th>
 
-              <th className="border p-3">
+              <th className="border p-3 text-center">
                 NG Outward
               </th>
 
-              <th className="border p-3">
+              <th className="border p-3 text-center">
                 Projection Qty
               </th>
 
-              <th className="border p-3">
+              <th className="border p-3 text-center">
                 Live Stock
               </th>
 
@@ -167,7 +167,14 @@ export default function LiveStockPage() {
 
                   <tr key={index}>
 
-                    <td className="border p-3 font-bold">
+                    <td
+                      className="
+                        border
+                        p-3
+                        text-center
+                        font-bold
+                      "
+                    >
 
                       {
                         item.material_code
@@ -175,7 +182,13 @@ export default function LiveStockPage() {
 
                     </td>
 
-                    <td className="border p-3">
+                    <td
+                      className="
+                        border
+                        p-3
+                        text-center
+                      "
+                    >
 
                       {
                         item.description
@@ -187,6 +200,7 @@ export default function LiveStockPage() {
                       className="
                         border
                         p-3
+                        text-center
                         text-green-600
                         font-bold
                       "
@@ -202,6 +216,7 @@ export default function LiveStockPage() {
                       className="
                         border
                         p-3
+                        text-center
                         text-red-600
                         font-bold
                       "
@@ -217,6 +232,7 @@ export default function LiveStockPage() {
                       className="
                         border
                         p-3
+                        text-center
                         text-blue-600
                         font-bold
                       "
@@ -232,6 +248,7 @@ export default function LiveStockPage() {
                       className="
                         border
                         p-3
+                        text-center
                         text-orange-600
                         font-bold
                       "
@@ -247,6 +264,7 @@ export default function LiveStockPage() {
                       className="
                         border
                         p-3
+                        text-center
                         text-yellow-600
                         font-bold
                       "
@@ -262,6 +280,7 @@ export default function LiveStockPage() {
                       className="
                         border
                         p-3
+                        text-center
                         text-purple-600
                         font-bold
                       "
