@@ -8,7 +8,8 @@ export async function GET() {
     const totalMaterials =
       await sql`
 
-        SELECT COUNT(*) AS total
+        SELECT
+        COUNT(*) AS total
 
         FROM material_master
 
@@ -54,51 +55,62 @@ export async function GET() {
 
         FROM projection_master
 
-        WHERE projection_action =
+        WHERE
+        projection_action =
         'Allocate'
+
+        AND (
+          stock_action IS NULL
+          OR stock_action = ''
+        )
 
       `;
 
-    const liveStock =
+    const inward =
       Number(
-        totalInward[0].total || 0
-      )
-
-      -
-
-      Number(
-        totalOutward[0].total || 0
-      )
-
-      -
-
-      Number(
-        totalProjection[0].total || 0
+        totalInward?.[0]?.total || 0
       );
+
+    const outward =
+      Number(
+        totalOutward?.[0]?.total || 0
+      );
+
+    const projection =
+      Number(
+        totalProjection?.[0]?.total || 0
+      );
+
+    const liveStock =
+
+      inward
+
+      -
+
+      outward
+
+      -
+
+      projection;
 
     return NextResponse.json({
 
       totalMaterials:
         Number(
-          totalMaterials[0].total || 0
+          totalMaterials?.[0]?.total || 0
         ),
 
       totalInward:
-        Number(
-          totalInward[0].total || 0
-        ),
+        inward,
 
       totalOutward:
-        Number(
-          totalOutward[0].total || 0
-        ),
+        outward,
 
       totalProjection:
-        Number(
-          totalProjection[0].total || 0
-        ),
+        projection,
 
-      liveStock
+      liveStock:
+        liveStock || 0
 
     });
 
