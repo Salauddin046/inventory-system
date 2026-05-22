@@ -25,7 +25,7 @@ export async function GET() {
           ) AS outward_qty,
 
           COALESCE(
-            p.projection_qty,
+            p.pending_projection_qty,
             0
           ) AS projection_qty
 
@@ -84,11 +84,31 @@ export async function GET() {
             material_code,
 
             SUM(
-              COALESCE(
-                projection_qty,
-                0
-              )
-            ) AS projection_qty
+
+              CASE
+
+                WHEN stock_action =
+                'Issue'
+
+                THEN
+
+                  projection_qty -
+                  stock_qty
+
+                WHEN stock_action =
+                'Not Issue'
+
+                THEN
+
+                  0
+
+                ELSE
+
+                  projection_qty
+
+              END
+
+            ) AS pending_projection_qty
 
           FROM projection_master
 
