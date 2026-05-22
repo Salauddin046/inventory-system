@@ -5,126 +5,113 @@ export async function GET() {
 
   try {
 
-    const data =
-      await sql`
+    const data = await sql`
+
+      SELECT
+
+        m.material_code,
+
+        m.description,
+
+        COALESCE(i.good_inward, 0)
+        AS good_inward,
+
+        COALESCE(i.ng_inward, 0)
+        AS ng_inward,
+
+        COALESCE(o.good_outward, 0)
+        AS good_outward,
+
+        COALESCE(o.ng_outward, 0)
+        AS ng_outward,
+
+        COALESCE(p.projection_qty, 0)
+        AS projection_qty,
+
+        (
+
+          COALESCE(i.good_inward, 0)
+
+          -
+
+          COALESCE(o.good_outward, 0)
+
+          -
+
+          COALESCE(p.projection_qty, 0)
+
+        ) AS live_stock
+
+      FROM materials m
+
+      LEFT JOIN (
 
         SELECT
 
-          m.material_code,
+          material_code,
 
-          m.description,
+          SUM(g_qty) AS good_inward,
 
-          COALESCE(
-            i.inward_qty,
-            0
-          ) AS inward_qty,
+          SUM(ng_qty) AS ng_inward
 
-          COALESCE(
-            o.outward_qty,
-            0
-          ) AS outward_qty,
+        FROM inward_transactions
 
-          COALESCE(
-            p.projection_qty,
-            0
-          ) AS projection_qty
+        GROUP BY material_code
 
-        FROM material_master m
+      ) i
 
-        LEFT JOIN (
+      ON m.material_code =
+      i.material_code
 
-          SELECT
+      LEFT JOIN (
 
-            material_code,
+        SELECT
 
-            SUM(
-              COALESCE(
-                g_qty,
-                0
-              )
-            ) AS inward_qty
+          material_code,
 
-          FROM inward_transactions
+          SUM(g_outward_qty)
+          AS good_outward,
 
-          GROUP BY material_code
+          SUM(ng_outward_qty)
+          AS ng_outward
 
-        ) i
+        FROM outward_transactions
 
-        ON
-        m.material_code =
-        i.material_code
+        GROUP BY material_code
 
-        LEFT JOIN (
+      ) o
 
-          SELECT
+      ON m.material_code =
+      o.material_code
 
-            material_code,
+      LEFT JOIN (
 
-            SUM(
-              COALESCE(
-                g_outward_qty,
-                0
-              )
-            ) AS outward_qty
+        SELECT
 
-          FROM outward_transactions
+          material_code,
 
-          GROUP BY material_code
+          SUM(projection_qty)
+          AS projection_qty
 
-        ) o
+        FROM projection_master
 
-        ON
-        m.material_code =
-        o.material_code
+        GROUP BY material_code
 
-        LEFT JOIN (
+      ) p
 
-          SELECT
+      ON m.material_code =
+      p.material_code
 
-            material_code,
+      ORDER BY
+      m.material_code ASC
 
-            SUM(
-
-              CASE
-
-                WHEN projection_action =
-                'Allocate'
-
-                AND (
-                  stock_action IS NULL
-                  OR stock_action = ''
-                )
-
-                THEN
-                projection_qty
-
-                ELSE
-                0
-
-              END
-
-            ) AS projection_qty
-
-          FROM projection_master
-
-          GROUP BY material_code
-
-        ) p
-
-        ON
-        m.material_code =
-        p.material_code
-
-        ORDER BY
-        m.material_code ASC
-
-      `;
+    `;
 
     return NextResponse.json(
       data
     );
 
-  } catch (error: any) {
+  } catch (error) {
 
     console.log(error);
 
