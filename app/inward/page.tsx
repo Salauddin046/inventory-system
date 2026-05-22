@@ -7,16 +7,16 @@ export default function InwardPage() {
   const [materials, setMaterials] =
     useState<any[]>([]);
 
-  const [vendors, setVendors] =
-    useState<any[]>([]);
-
   const [inwardData, setInwardData] =
     useState<any[]>([]);
 
   const [form, setForm] =
     useState({
 
-      inward_date: "",
+      inward_date:
+        new Date()
+          .toISOString()
+          .split("T")[0],
 
       material_code: "",
 
@@ -26,7 +26,9 @@ export default function InwardPage() {
 
       invoice_no: "",
 
-      g_qty: "",
+      good_qty: "",
+
+      ng_qty: "",
 
       remarks: ""
 
@@ -35,8 +37,6 @@ export default function InwardPage() {
   useEffect(() => {
 
     fetchMaterials();
-
-    fetchVendors();
 
     fetchInwardData();
 
@@ -54,33 +54,11 @@ export default function InwardPage() {
       const result =
         await response.json();
 
-      setMaterials(result);
-
-    } catch (error) {
-
-      console.log(error);
-
-    }
-
-  }
-
-  async function fetchVendors() {
-
-    try {
-
-      const response =
-        await fetch(
-          "/api/vendor-dept"
-        );
-
-      const result =
-        await response.json();
-
       if (
         Array.isArray(result)
       ) {
 
-        setVendors(result);
+        setMaterials(result);
 
       }
 
@@ -104,7 +82,13 @@ export default function InwardPage() {
       const result =
         await response.json();
 
-      setInwardData(result);
+      if (
+        Array.isArray(result)
+      ) {
+
+        setInwardData(result);
+
+      }
 
     } catch (error) {
 
@@ -147,7 +131,10 @@ export default function InwardPage() {
 
         setForm({
 
-          inward_date: "",
+          inward_date:
+            new Date()
+              .toISOString()
+              .split("T")[0],
 
           material_code: "",
 
@@ -157,7 +144,9 @@ export default function InwardPage() {
 
           invoice_no: "",
 
-          g_qty: "",
+          good_qty: "",
+
+          ng_qty: "",
 
           remarks: ""
 
@@ -192,7 +181,10 @@ export default function InwardPage() {
       material_code: value,
 
       description:
-        selected?.description || ""
+        selected?.description || "",
+
+      vendor_name:
+        selected?.vendor_dept || ""
 
     });
 
@@ -211,14 +203,13 @@ export default function InwardPage() {
         <input
           type="date"
           value={form.inward_date}
-          onChange={(e) =>
-            setForm({
-              ...form,
-              inward_date:
-                e.target.value
-            })
-          }
-          className="border p-2 rounded"
+          readOnly
+          className="
+            border
+            p-2
+            rounded
+            bg-gray-100
+          "
         />
 
         <select
@@ -261,49 +252,26 @@ export default function InwardPage() {
           placeholder="Description"
           value={form.description}
           readOnly
-          className="border p-2 rounded bg-gray-100"
+          className="
+            border
+            p-2
+            rounded
+            bg-gray-100
+          "
         />
 
-        <select
-
+        <input
+          type="text"
+          placeholder="Vendor"
           value={form.vendor_name}
-
-          onChange={(e) =>
-            setForm({
-              ...form,
-              vendor_name:
-                e.target.value
-            })
-          }
-
-          className="border p-2 rounded"
-
-        >
-
-          <option value="">
-            Select Vendor
-          </option>
-
-          {vendors.map(
-            (vendor: any) => (
-
-              <option
-                key={vendor.id}
-                value={
-                  vendor.vendor_dept
-                }
-              >
-
-                {
-                  vendor.vendor_dept
-                }
-
-              </option>
-
-            )
-          )}
-
-        </select>
+          readOnly
+          className="
+            border
+            p-2
+            rounded
+            bg-gray-100
+          "
+        />
 
         <input
           type="text"
@@ -321,12 +289,26 @@ export default function InwardPage() {
 
         <input
           type="number"
-          placeholder="Qty"
-          value={form.g_qty}
+          placeholder="Good Qty"
+          value={form.good_qty}
           onChange={(e) =>
             setForm({
               ...form,
-              g_qty:
+              good_qty:
+                e.target.value
+            })
+          }
+          className="border p-2 rounded"
+        />
+
+        <input
+          type="number"
+          placeholder="NG Qty"
+          value={form.ng_qty}
+          onChange={(e) =>
+            setForm({
+              ...form,
+              ng_qty:
                 e.target.value
             })
           }
@@ -391,7 +373,11 @@ export default function InwardPage() {
               </th>
 
               <th className="border p-2">
-                Qty
+                Good Qty
+              </th>
+
+              <th className="border p-2">
+                NG Qty
               </th>
 
               <th className="border p-2">
@@ -442,9 +428,15 @@ export default function InwardPage() {
                     }
                   </td>
 
-                  <td className="border p-2 text-blue-600 font-bold">
+                  <td className="border p-2 text-green-600 font-bold">
                     {
-                      item.g_qty
+                      item.good_qty
+                    }
+                  </td>
+
+                  <td className="border p-2 text-red-600 font-bold">
+                    {
+                      item.ng_qty
                     }
                   </td>
 
