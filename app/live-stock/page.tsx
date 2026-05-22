@@ -31,8 +31,6 @@ export default function LiveStockPage() {
       const result =
         await response.json();
 
-      console.log(result);
-
       if (
         Array.isArray(result)
       ) {
@@ -108,11 +106,19 @@ export default function LiveStockPage() {
               </th>
 
               <th className="border p-2">
-                Inward Qty
+                Good Inward
               </th>
 
               <th className="border p-2">
-                Outward Qty
+                NG Inward
+              </th>
+
+              <th className="border p-2">
+                Good Outward
+              </th>
+
+              <th className="border p-2">
+                NG Outward
               </th>
 
               <th className="border p-2">
@@ -138,14 +144,24 @@ export default function LiveStockPage() {
                   index: number
                 ) => {
 
-                  const inwardQty =
+                  const goodInward =
                     Number(
-                      item.inward_qty || 0
+                      item.good_inward || 0
                     );
 
-                  const outwardQty =
+                  const ngInward =
                     Number(
-                      item.outward_qty || 0
+                      item.ng_inward || 0
+                    );
+
+                  const goodOutward =
+                    Number(
+                      item.good_outward || 0
+                    );
+
+                  const ngOutward =
+                    Number(
+                      item.ng_outward || 0
                     );
 
                   const projectionQty =
@@ -155,11 +171,11 @@ export default function LiveStockPage() {
 
                   const liveStock =
 
-                    inwardQty
+                    goodInward
 
                     -
 
-                    outwardQty
+                    goodOutward
 
                     -
 
@@ -181,15 +197,27 @@ export default function LiveStockPage() {
                         }
                       </td>
 
-                      <td className="border p-2 text-blue-600 font-bold">
+                      <td className="border p-2 text-green-600 font-bold">
                         {
-                          inwardQty
+                          goodInward
                         }
                       </td>
 
                       <td className="border p-2 text-red-600 font-bold">
                         {
-                          outwardQty
+                          ngInward
+                        }
+                      </td>
+
+                      <td className="border p-2 text-blue-600 font-bold">
+                        {
+                          goodOutward
+                        }
+                      </td>
+
+                      <td className="border p-2 text-orange-600 font-bold">
+                        {
+                          ngOutward
                         }
                       </td>
 
@@ -199,7 +227,7 @@ export default function LiveStockPage() {
                         }
                       </td>
 
-                      <td className="border p-2 text-green-600 font-bold">
+                      <td className="border p-2 text-purple-700 font-bold">
                         {
                           liveStock
                         }
@@ -217,7 +245,7 @@ export default function LiveStockPage() {
               <tr>
 
                 <td
-                  colSpan={6}
+                  colSpan={8}
                   className="border p-4 text-center"
                 >
                   No Live Stock Found
