@@ -357,7 +357,7 @@ export default function InwardPage() {
 
       <div className="flex items-center gap-4 mb-4">
 
-        <Link href="/dashboard">
+        <Link href="/">
 
           <button
             className="
