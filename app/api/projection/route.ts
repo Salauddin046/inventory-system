@@ -1,30 +1,70 @@
-import { NextResponse } from "next/server";
-import sql from "@/lib/db";
-
-export async function GET() {
+export async function PUT(
+  request: Request
+) {
 
   try {
 
-    const data =
+    const body =
+      await request.json();
+
+    if (
+      body.projection_action
+    ) {
+
       await sql`
 
-        SELECT *
+        UPDATE projection_master
 
-        FROM projection_master
+        SET
 
-        ORDER BY id DESC
+          projection_action =
+          ${body.projection_action}
+
+        WHERE id =
+        ${body.id}
 
       `;
 
-    return NextResponse.json(
-      data
-    );
+    }
+
+    if (
+      body.stock_action
+    ) {
+
+      await sql`
+
+        UPDATE projection_master
+
+        SET
+
+          stock_qty =
+          ${body.stock_qty || 0},
+
+          stock_action =
+          ${body.stock_action}
+
+        WHERE id =
+        ${body.id}
+
+      `;
+
+    }
+
+    return NextResponse.json({
+
+      success: true
+
+    });
 
   } catch (error) {
 
     console.log(error);
 
-    return NextResponse.json([]);
+    return NextResponse.json({
+
+      success: false
+
+    });
 
   }
 
