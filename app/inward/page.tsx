@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 export default function InwardPage() {
@@ -162,7 +163,11 @@ export default function InwardPage() {
     const selected =
       materials.find(
         (item: any) =>
-          item.material_code === value
+
+          (
+            item.material_code ||
+            item.material
+          ) === value
       );
 
     setForm({
@@ -172,10 +177,14 @@ export default function InwardPage() {
       material_code: value,
 
       description:
-        selected?.description || "",
+        selected?.description ||
+        selected?.material_description ||
+        "",
 
       type_of_material:
-        selected?.type_of_material || "",
+        selected?.type_of_material ||
+        selected?.type ||
+        "",
 
       uom:
         selected?.uom || ""
@@ -266,14 +275,28 @@ export default function InwardPage() {
       filtered.map(
         (item: any) => [
 
-          item.inward_date,
+          item.inward_date
+            ? new Date(
+                item.inward_date
+              ).toLocaleDateString(
+                "en-GB"
+              )
+            : "",
+
           item.month,
+
           item.vendor_name,
+
           item.invoice_no,
+
           item.material_code,
+
           item.material_description,
+
           item.g_qty,
+
           item.ng_qty,
+
           item.uom
 
         ]
@@ -316,6 +339,26 @@ export default function InwardPage() {
   return (
 
     <div className="p-4">
+
+      <div className="flex items-center gap-4 mb-4">
+
+        <Link href="/dashboard">
+
+          <button
+            className="
+              bg-gray-700
+              text-white
+              px-4
+              py-2
+              rounded
+            "
+          >
+            Back
+          </button>
+
+        </Link>
+
+      </div>
 
       <h1 className="text-4xl font-bold mb-6">
         Inward Entry
@@ -428,24 +471,30 @@ export default function InwardPage() {
             Select Material
           </option>
 
-          {materials.map(
-            (item: any) => (
+          {Array.isArray(materials) &&
+            materials.map(
+              (
+                item: any,
+                index: number
+              ) => (
 
-              <option
-                key={item.id}
-                value={
-                  item.material_code
-                }
-              >
+                <option
+                  key={index}
+                  value={
+                    item.material_code ||
+                    item.material
+                  }
+                >
 
-                {
-                  item.material_code
-                }
+                  {
+                    item.material_code ||
+                    item.material
+                  }
 
-              </option>
+                </option>
 
-            )
-          )}
+              )
+            )}
 
         </select>
 
@@ -658,9 +707,17 @@ export default function InwardPage() {
                 <tr key={index}>
 
                   <td className="border p-2">
+
                     {
                       item.inward_date
+                        ? new Date(
+                            item.inward_date
+                          ).toLocaleDateString(
+                            "en-GB"
+                          )
+                        : ""
                     }
+
                   </td>
 
                   <td className="border p-2">
