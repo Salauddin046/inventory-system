@@ -14,6 +14,13 @@ export async function POST(
       const row of body
     ) {
 
+      const projectionQty =
+        Number(
+          row.qty ||
+          row.projection_qty ||
+          0
+        );
+
       await sql`
 
         INSERT INTO projection_master
@@ -50,17 +57,15 @@ export async function POST(
 
           ${row.description},
 
-          ${Number(
-            row.qty || 0
-          )},
+          ${projectionQty},
 
-          'Unallocate',
+          'Allocate',
 
           'Not Issue',
 
           0,
 
-          0
+          ${projectionQty}
 
         )
 
