@@ -173,6 +173,10 @@ export default function ProjectionPage() {
                 Returned Live Stock
               </th>
 
+              <th className="border p-2">
+                Clear Projection
+              </th>
+
             </tr>
 
           </thead>
@@ -203,41 +207,22 @@ export default function ProjectionPage() {
                   let returnedQty = 0;
 
                   if (
-                    item.projection_action ===
-                    "Allocate"
+                    item.stock_action ===
+                    "Issue"
                   ) {
 
-                    if (
-                      item.stock_action ===
-                      "Issue"
-                    ) {
+                    outwardQty =
+                      stockQty;
 
-                      outwardQty =
-                        stockQty;
-
-                      returnedQty =
-                        projectionQty -
-                        stockQty;
-
-                    }
-
-                    if (
-                      item.stock_action ===
-                      "Not Issue"
-                    ) {
-
-                      outwardQty = 0;
-
-                      returnedQty =
-                        projectionQty;
-
-                    }
+                    returnedQty =
+                      projectionQty -
+                      stockQty;
 
                   }
 
                   if (
-                    item.projection_action ===
-                    "Un Allocate"
+                    item.stock_action ===
+                    "Not Issue"
                   ) {
 
                     outwardQty = 0;
@@ -287,6 +272,15 @@ export default function ProjectionPage() {
                           value={
                             item.projection_action || ""
                           }
+
+                          disabled={
+                            item.stock_action ===
+                            "Issue" ||
+
+                            item.stock_action ===
+                            "Not Issue"
+                          }
+
                           onChange={(e) =>
                             handleChange(
                               index,
@@ -294,6 +288,7 @@ export default function ProjectionPage() {
                               e.target.value
                             )
                           }
+
                           className="border p-1 rounded w-full"
                         >
 
@@ -318,11 +313,15 @@ export default function ProjectionPage() {
                         <button
                           onClick={() =>
                             updateProjection({
+
                               id: item.id,
+
                               projection_action:
                                 item.projection_action
+
                             })
                           }
+
                           className="bg-blue-600 text-white px-3 py-1 rounded"
                         >
                           Submit
@@ -337,6 +336,7 @@ export default function ProjectionPage() {
                           value={
                             item.stock_qty || ""
                           }
+
                           onChange={(e) =>
                             handleChange(
                               index,
@@ -344,6 +344,7 @@ export default function ProjectionPage() {
                               e.target.value
                             )
                           }
+
                           className="border p-1 rounded w-full"
                         />
 
@@ -355,6 +356,7 @@ export default function ProjectionPage() {
                           value={
                             item.stock_action || ""
                           }
+
                           onChange={(e) =>
                             handleChange(
                               index,
@@ -362,6 +364,7 @@ export default function ProjectionPage() {
                               e.target.value
                             )
                           }
+
                           className="border p-1 rounded w-full"
                         >
 
@@ -386,13 +389,18 @@ export default function ProjectionPage() {
                         <button
                           onClick={() =>
                             updateProjection({
+
                               id: item.id,
+
                               stock_qty:
                                 item.stock_qty,
+
                               stock_action:
                                 item.stock_action
+
                             })
                           }
+
                           className="bg-black text-white px-3 py-1 rounded"
                         >
                           Submit
@@ -412,6 +420,32 @@ export default function ProjectionPage() {
                         }
                       </td>
 
+                      <td className="border p-2">
+
+                        <button
+                          onClick={() =>
+                            updateProjection({
+
+                              id: item.id,
+
+                              projection_action:
+                                null,
+
+                              stock_action:
+                                null,
+
+                              stock_qty: 0
+
+                            })
+                          }
+
+                          className="bg-red-600 text-white px-3 py-1 rounded"
+                        >
+                          Clear
+                        </button>
+
+                      </td>
+
                     </tr>
 
                   );
@@ -424,7 +458,7 @@ export default function ProjectionPage() {
               <tr>
 
                 <td
-                  colSpan={12}
+                  colSpan={13}
                   className="border p-4 text-center"
                 >
                   No Projection Data Found
