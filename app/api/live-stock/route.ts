@@ -27,35 +27,11 @@ export async function GET() {
           COALESCE(
             p.projection_qty,
             0
-          ) AS projection_qty,
-
-          (
-
-            COALESCE(
-              i.inward_qty,
-              0
-            )
-
-            -
-
-            COALESCE(
-              o.outward_qty,
-              0
-            )
-
-            -
-
-            COALESCE(
-              p.projection_qty,
-              0
-            )
-
-          ) AS live_stock
+          ) AS projection_qty
 
         FROM material_master m
 
-        LEFT JOIN
-        (
+        LEFT JOIN (
 
           SELECT
 
@@ -70,21 +46,17 @@ export async function GET() {
 
         ) i
 
-        ON
-        m.material_code =
+        ON m.material_code =
         i.material_code
 
-        LEFT JOIN
-        (
+        LEFT JOIN (
 
           SELECT
 
             material_code,
 
-            COALESCE(
-              SUM(g_outward_qty),
-              0
-            ) AS outward_qty
+            SUM(g_outward_qty)
+            AS outward_qty
 
           FROM outward_transactions
 
@@ -92,30 +64,28 @@ export async function GET() {
 
         ) o
 
-        ON
-        m.material_code =
+        ON m.material_code =
         o.material_code
 
-        LEFT JOIN
-        (
+        LEFT JOIN (
 
           SELECT
 
             material_code,
 
-            COALESCE(
-              SUM(allocated_qty),
-              0
-            ) AS projection_qty
+            SUM(projection_qty)
+            AS projection_qty
 
           FROM projection_master
+
+          WHERE projection_action =
+          'Allocate'
 
           GROUP BY material_code
 
         ) p
 
-        ON
-        m.material_code =
+        ON m.material_code =
         p.material_code
 
         ORDER BY
@@ -123,7 +93,9 @@ export async function GET() {
 
       `;
 
-    return NextResponse.json(data);
+    return NextResponse.json(
+      data
+    );
 
   } catch (error: any) {
 
