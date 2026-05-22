@@ -7,6 +7,9 @@ export default function InwardPage() {
   const [materials, setMaterials] =
     useState<any[]>([]);
 
+  const [vendors, setVendors] =
+    useState<any[]>([]);
+
   const [inwardData, setInwardData] =
     useState<any[]>([]);
 
@@ -18,9 +21,18 @@ export default function InwardPage() {
           .toISOString()
           .split("T")[0],
 
+      inward_month:
+        new Date()
+          .toLocaleString(
+            "default",
+            { month: "long" }
+          ),
+
       material_code: "",
 
       description: "",
+
+      uom: "",
 
       vendor_name: "",
 
@@ -37,6 +49,8 @@ export default function InwardPage() {
   useEffect(() => {
 
     fetchMaterials();
+
+    fetchVendors();
 
     fetchInwardData();
 
@@ -59,6 +73,34 @@ export default function InwardPage() {
       ) {
 
         setMaterials(result);
+
+      }
+
+    } catch (error) {
+
+      console.log(error);
+
+    }
+
+  }
+
+  async function fetchVendors() {
+
+    try {
+
+      const response =
+        await fetch(
+          "/api/vendor-dept"
+        );
+
+      const result =
+        await response.json();
+
+      if (
+        Array.isArray(result)
+      ) {
+
+        setVendors(result);
 
       }
 
@@ -95,6 +137,32 @@ export default function InwardPage() {
       console.log(error);
 
     }
+
+  }
+
+  function handleMaterialChange(
+    value: string
+  ) {
+
+    const selected =
+      materials.find(
+        (item: any) =>
+          item.material_code === value
+      );
+
+    setForm({
+
+      ...form,
+
+      material_code: value,
+
+      description:
+        selected?.description || "",
+
+      uom:
+        selected?.uom || ""
+
+    });
 
   }
 
@@ -136,9 +204,18 @@ export default function InwardPage() {
               .toISOString()
               .split("T")[0],
 
+          inward_month:
+            new Date()
+              .toLocaleString(
+                "default",
+                { month: "long" }
+              ),
+
           material_code: "",
 
           description: "",
+
+          uom: "",
 
           vendor_name: "",
 
@@ -164,32 +241,6 @@ export default function InwardPage() {
 
   }
 
-  function handleMaterialChange(
-    value: string
-  ) {
-
-    const selected =
-      materials.find(
-        (item: any) =>
-          item.material_code === value
-      );
-
-    setForm({
-
-      ...form,
-
-      material_code: value,
-
-      description:
-        selected?.description || "",
-
-      vendor_name:
-        selected?.vendor_dept || ""
-
-    });
-
-  }
-
   return (
 
     <div className="p-6">
@@ -203,6 +254,18 @@ export default function InwardPage() {
         <input
           type="date"
           value={form.inward_date}
+          readOnly
+          className="
+            border
+            p-2
+            rounded
+            bg-gray-100
+          "
+        />
+
+        <input
+          type="text"
+          value={form.inward_month}
           readOnly
           className="
             border
@@ -262,8 +325,8 @@ export default function InwardPage() {
 
         <input
           type="text"
-          placeholder="Vendor"
-          value={form.vendor_name}
+          placeholder="UOM"
+          value={form.uom}
           readOnly
           className="
             border
@@ -272,6 +335,43 @@ export default function InwardPage() {
             bg-gray-100
           "
         />
+
+        <select
+          value={form.vendor_name}
+          onChange={(e) =>
+            setForm({
+              ...form,
+              vendor_name:
+                e.target.value
+            })
+          }
+          className="border p-2 rounded"
+        >
+
+          <option value="">
+            Select Vendor
+          </option>
+
+          {vendors.map(
+            (vendor: any) => (
+
+              <option
+                key={vendor.id}
+                value={
+                  vendor.vendor_dept
+                }
+              >
+
+                {
+                  vendor.vendor_dept
+                }
+
+              </option>
+
+            )
+          )}
+
+        </select>
 
         <input
           type="text"
@@ -357,11 +457,19 @@ export default function InwardPage() {
               </th>
 
               <th className="border p-2">
+                Month
+              </th>
+
+              <th className="border p-2">
                 Material Code
               </th>
 
               <th className="border p-2">
                 Description
+              </th>
+
+              <th className="border p-2">
+                UOM
               </th>
 
               <th className="border p-2">
@@ -404,6 +512,12 @@ export default function InwardPage() {
                     }
                   </td>
 
+                  <td className="border p-2">
+                    {
+                      item.inward_month
+                    }
+                  </td>
+
                   <td className="border p-2 font-bold">
                     {
                       item.material_code
@@ -413,6 +527,12 @@ export default function InwardPage() {
                   <td className="border p-2">
                     {
                       item.description
+                    }
+                  </td>
+
+                  <td className="border p-2">
+                    {
+                      item.uom
                     }
                   </td>
 
