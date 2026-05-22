@@ -5,86 +5,104 @@ export async function GET() {
 
   try {
 
-    const materials =
+    const totalMaterials =
       await sql`
-        SELECT COUNT(*) AS count
-        FROM materials
+
+        SELECT COUNT(*) AS total
+
+        FROM material_master
+
       `;
 
-    const inward =
+    const totalInward =
       await sql`
+
         SELECT
-        COALESCE(
-          SUM(g_qty),
-          0
-        ) AS total
+
+          COALESCE(
+            SUM(g_qty),
+            0
+          ) AS total
+
         FROM inward_transactions
+
       `;
 
-    const outward =
+    const totalOutward =
       await sql`
+
         SELECT
-        COALESCE(
-          SUM(g_outward_qty),
-          0
-        ) AS total
+
+          COALESCE(
+            SUM(g_outward_qty),
+            0
+          ) AS total
+
         FROM outward_transactions
+
       `;
 
-    const projection =
+    const totalProjection =
       await sql`
+
         SELECT
-        COALESCE(
-          SUM(projection_qty),
-          0
-        ) AS total
-        FROM live_stock
+
+          COALESCE(
+            SUM(projection_qty),
+            0
+          ) AS total
+
+        FROM projection_master
+
+        WHERE projection_action =
+        'Allocate'
+
       `;
 
     const liveStock =
-      await sql`
-        SELECT
-        COALESCE(
-          SUM(
-            total_inward -
-            total_outward -
-            projection_qty
-          ),
-          0
-        ) AS total
-        FROM live_stock
-      `;
+      Number(
+        totalInward[0].total || 0
+      )
+
+      -
+
+      Number(
+        totalOutward[0].total || 0
+      )
+
+      -
+
+      Number(
+        totalProjection[0].total || 0
+      );
 
     return NextResponse.json({
 
       totalMaterials:
         Number(
-          materials[0].count || 0
+          totalMaterials[0].total || 0
         ),
 
       totalInward:
         Number(
-          inward[0].total || 0
+          totalInward[0].total || 0
         ),
 
       totalOutward:
         Number(
-          outward[0].total || 0
+          totalOutward[0].total || 0
         ),
 
       totalProjection:
         Number(
-          projection[0].total || 0
+          totalProjection[0].total || 0
         ),
 
-      totalLiveStock:
-        Number(
-          liveStock[0].total || 0
-        )
+      liveStock
 
     });
 
-  } catch (error) {
+  } catch (error: any) {
 
     console.log(error);
 
@@ -98,7 +116,7 @@ export async function GET() {
 
       totalProjection: 0,
 
-      totalLiveStock: 0
+      liveStock: 0
 
     });
 
