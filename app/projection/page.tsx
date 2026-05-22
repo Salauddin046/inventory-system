@@ -333,6 +333,7 @@ export default function ProjectionPage() {
 
                         <input
                           type="number"
+
                           value={
                             item.stock_qty || ""
                           }
@@ -423,25 +424,58 @@ export default function ProjectionPage() {
                       <td className="border p-2">
 
                         <button
-                          onClick={() =>
-                            updateProjection({
 
-                              id: item.id,
+                          onClick={async () => {
 
-                              projection_action:
-                                null,
+                            try {
 
-                              stock_action:
-                                null,
+                              const response =
+                                await fetch(
+                                  "/api/projection",
+                                  {
 
-                              stock_qty: 0
+                                    method: "DELETE",
 
-                            })
-                          }
+                                    headers: {
+                                      "Content-Type":
+                                        "application/json"
+                                    },
+
+                                    body:
+                                      JSON.stringify({
+                                        id: item.id
+                                      })
+
+                                  }
+                                );
+
+                              const result =
+                                await response.json();
+
+                              if (result.success) {
+
+                                alert(
+                                  "Projection Cleared Successfully"
+                                );
+
+                                fetchData();
+
+                              }
+
+                            } catch (error) {
+
+                              console.log(error);
+
+                            }
+
+                          }}
 
                           className="bg-red-600 text-white px-3 py-1 rounded"
+
                         >
+
                           Clear
+
                         </button>
 
                       </td>
