@@ -13,6 +13,12 @@ export default function InwardPage() {
   const [inwardData, setInwardData] =
     useState<any[]>([]);
 
+  const [fromDate, setFromDate] =
+    useState("");
+
+  const [toDate, setToDate] =
+    useState("");
+
   const [form, setForm] =
     useState({
 
@@ -21,26 +27,33 @@ export default function InwardPage() {
           .toISOString()
           .split("T")[0],
 
-      inward_month:
+      month:
         new Date()
           .toLocaleString(
             "default",
-            { month: "long" }
+            {
+              month: "long",
+              year: "numeric"
+            }
           ),
+
+      vendor_name: "",
+
+      type_of_inward: "",
+
+      invoice_no: "",
 
       material_code: "",
 
       description: "",
 
-      uom: "",
+      type_of_material: "",
 
-      vendor_name: "",
-
-      invoice_no: "",
-
-      good_qty: "",
+      g_qty: "",
 
       ng_qty: "",
+
+      uom: "",
 
       remarks: ""
 
@@ -68,13 +81,7 @@ export default function InwardPage() {
       const result =
         await response.json();
 
-      if (
-        Array.isArray(result)
-      ) {
-
-        setMaterials(result);
-
-      }
+      setMaterials(result);
 
     } catch (error) {
 
@@ -96,13 +103,7 @@ export default function InwardPage() {
       const result =
         await response.json();
 
-      if (
-        Array.isArray(result)
-      ) {
-
-        setVendors(result);
-
-      }
+      setVendors(result);
 
     } catch (error) {
 
@@ -124,13 +125,7 @@ export default function InwardPage() {
       const result =
         await response.json();
 
-      if (
-        Array.isArray(result)
-      ) {
-
-        setInwardData(result);
-
-      }
+      setInwardData(result);
 
     } catch (error) {
 
@@ -158,6 +153,9 @@ export default function InwardPage() {
 
       description:
         selected?.description || "",
+
+      type_of_material:
+        selected?.type || "",
 
       uom:
         selected?.uom || ""
@@ -197,6 +195,8 @@ export default function InwardPage() {
           "Inward Saved Successfully"
         );
 
+        fetchInwardData();
+
         setForm({
 
           inward_date:
@@ -204,32 +204,37 @@ export default function InwardPage() {
               .toISOString()
               .split("T")[0],
 
-          inward_month:
+          month:
             new Date()
               .toLocaleString(
                 "default",
-                { month: "long" }
+                {
+                  month: "long",
+                  year: "numeric"
+                }
               ),
+
+          vendor_name: "",
+
+          type_of_inward: "",
+
+          invoice_no: "",
 
           material_code: "",
 
           description: "",
 
-          uom: "",
+          type_of_material: "",
 
-          vendor_name: "",
-
-          invoice_no: "",
-
-          good_qty: "",
+          g_qty: "",
 
           ng_qty: "",
+
+          uom: "",
 
           remarks: ""
 
         });
-
-        fetchInwardData();
 
       }
 
@@ -241,38 +246,197 @@ export default function InwardPage() {
 
   }
 
+  function downloadCSV() {
+
+    const filtered =
+      inwardData.filter(
+        (item: any) => {
+
+          if (
+            !fromDate ||
+            !toDate
+          ) return true;
+
+          return (
+            item.inward_date >=
+              fromDate &&
+            item.inward_date <=
+              toDate
+          );
+
+        }
+      );
+
+    const headers = [
+
+      "Date",
+      "Month",
+      "Vendor",
+      "Type Of Inward",
+      "Invoice No",
+      "Material Code",
+      "Description",
+      "Type Of Material",
+      "Good Qty",
+      "NG Qty",
+      "UOM",
+      "Remarks"
+
+    ];
+
+    const rows =
+      filtered.map(
+        (item: any) => [
+
+          item.inward_date,
+          item.month,
+          item.vendor_name,
+          item.type_of_inward,
+          item.invoice_no,
+          item.material_code,
+          item.description,
+          item.type_of_material,
+          item.g_qty,
+          item.ng_qty,
+          item.uom,
+          item.remarks
+
+        ]
+      );
+
+    let csvContent =
+      headers.join(",") + "\n";
+
+    rows.forEach((row: any) => {
+
+      csvContent +=
+        row.join(",") + "\n";
+
+    });
+
+    const blob =
+      new Blob(
+        [csvContent],
+        {
+          type:
+            "text/csv;charset=utf-8;"
+        }
+      );
+
+    const url =
+      URL.createObjectURL(blob);
+
+    const link =
+      document.createElement("a");
+
+    link.href = url;
+
+    link.download =
+      "inward_report.csv";
+
+    link.click();
+
+  }
+
   return (
 
-    <div className="p-6">
+    <div className="p-4">
 
-      <h1 className="text-3xl font-bold mb-6">
+      <h1 className="text-4xl font-bold mb-6">
         Inward Entry
       </h1>
 
-      <div className="grid grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-4 gap-4 mb-4">
 
         <input
-          type="date"
+          type="text"
           value={form.inward_date}
           readOnly
-          className="
-            border
-            p-2
-            rounded
-            bg-gray-100
-          "
+          className="border p-3 rounded"
         />
 
         <input
           type="text"
-          value={form.inward_month}
+          value={form.month}
           readOnly
-          className="
-            border
-            p-2
-            rounded
-            bg-gray-100
-          "
+          className="border p-3 rounded"
+        />
+
+        <select
+          value={form.vendor_name}
+          onChange={(e) =>
+            setForm({
+              ...form,
+              vendor_name:
+                e.target.value
+            })
+          }
+          className="border p-3 rounded"
+        >
+
+          <option value="">
+            Select Vendor
+          </option>
+
+          {vendors.map(
+            (vendor: any) => (
+
+              <option
+                key={vendor.id}
+                value={
+                  vendor.vendor_dept
+                }
+              >
+
+                {
+                  vendor.vendor_dept
+                }
+
+              </option>
+
+            )
+          )}
+
+        </select>
+
+        <select
+          value={form.type_of_inward}
+          onChange={(e) =>
+            setForm({
+              ...form,
+              type_of_inward:
+                e.target.value
+            })
+          }
+          className="border p-3 rounded"
+        >
+
+          <option value="">
+            Select Type Of Inward
+          </option>
+
+          <option value="New Inward">
+            New Inward
+          </option>
+
+          <option value="Return">
+            Return
+          </option>
+
+        </select>
+
+        <input
+          type="text"
+          placeholder="Invoice No"
+          value={form.invoice_no}
+          onChange={(e) =>
+            setForm({
+              ...form,
+              invoice_no:
+                e.target.value
+            })
+          }
+          className="border p-3 rounded"
         />
 
         <select
@@ -282,7 +446,7 @@ export default function InwardPage() {
               e.target.value
             )
           }
-          className="border p-2 rounded"
+          className="border p-3 rounded"
         >
 
           <option value="">
@@ -315,90 +479,31 @@ export default function InwardPage() {
           placeholder="Description"
           value={form.description}
           readOnly
-          className="
-            border
-            p-2
-            rounded
-            bg-gray-100
-          "
+          className="border p-3 rounded"
         />
 
         <input
           type="text"
-          placeholder="UOM"
-          value={form.uom}
+          placeholder="Type Of Material"
+          value={
+            form.type_of_material
+          }
           readOnly
-          className="
-            border
-            p-2
-            rounded
-            bg-gray-100
-          "
-        />
-
-        <select
-          value={form.vendor_name}
-          onChange={(e) =>
-            setForm({
-              ...form,
-              vendor_name:
-                e.target.value
-            })
-          }
-          className="border p-2 rounded"
-        >
-
-          <option value="">
-            Select Vendor
-          </option>
-
-          {vendors.map(
-            (vendor: any) => (
-
-              <option
-                key={vendor.id}
-                value={
-                  vendor.vendor_dept
-                }
-              >
-
-                {
-                  vendor.vendor_dept
-                }
-
-              </option>
-
-            )
-          )}
-
-        </select>
-
-        <input
-          type="text"
-          placeholder="Invoice No"
-          value={form.invoice_no}
-          onChange={(e) =>
-            setForm({
-              ...form,
-              invoice_no:
-                e.target.value
-            })
-          }
-          className="border p-2 rounded"
+          className="border p-3 rounded"
         />
 
         <input
           type="number"
-          placeholder="Good Qty"
-          value={form.good_qty}
+          placeholder="G Qty"
+          value={form.g_qty}
           onChange={(e) =>
             setForm({
               ...form,
-              good_qty:
+              g_qty:
                 e.target.value
             })
           }
-          className="border p-2 rounded"
+          className="border p-3 rounded"
         />
 
         <input
@@ -412,7 +517,15 @@ export default function InwardPage() {
                 e.target.value
             })
           }
-          className="border p-2 rounded"
+          className="border p-3 rounded"
+        />
+
+        <input
+          type="text"
+          placeholder="UOM"
+          value={form.uom}
+          readOnly
+          className="border p-3 rounded"
         />
 
         <input
@@ -426,154 +539,62 @@ export default function InwardPage() {
                 e.target.value
             })
           }
+          className="border p-3 rounded"
+        />
+
+      </div>
+
+      <button
+        onClick={handleSubmit}
+        className="
+          bg-black
+          text-white
+          px-6
+          py-3
+          rounded
+          mb-6
+          w-full
+        "
+      >
+        Save Inward
+      </button>
+
+      <div className="flex gap-4 mb-4">
+
+        <input
+          type="date"
+          value={fromDate}
+          onChange={(e) =>
+            setFromDate(
+              e.target.value
+            )
+          }
+          className="border p-2 rounded"
+        />
+
+        <input
+          type="date"
+          value={toDate}
+          onChange={(e) =>
+            setToDate(
+              e.target.value
+            )
+          }
           className="border p-2 rounded"
         />
 
         <button
-          onClick={handleSubmit}
+          onClick={downloadCSV}
           className="
-            bg-black
+            bg-green-600
             text-white
-            rounded
             px-4
             py-2
+            rounded
           "
         >
-          Submit
+          Download CSV
         </button>
-
-      </div>
-
-      <div className="overflow-x-auto">
-
-        <table className="w-full border border-collapse text-sm">
-
-          <thead>
-
-            <tr className="bg-gray-200">
-
-              <th className="border p-2">
-                Date
-              </th>
-
-              <th className="border p-2">
-                Month
-              </th>
-
-              <th className="border p-2">
-                Material Code
-              </th>
-
-              <th className="border p-2">
-                Description
-              </th>
-
-              <th className="border p-2">
-                UOM
-              </th>
-
-              <th className="border p-2">
-                Vendor
-              </th>
-
-              <th className="border p-2">
-                Invoice No
-              </th>
-
-              <th className="border p-2">
-                Good Qty
-              </th>
-
-              <th className="border p-2">
-                NG Qty
-              </th>
-
-              <th className="border p-2">
-                Remarks
-              </th>
-
-            </tr>
-
-          </thead>
-
-          <tbody>
-
-            {inwardData.map(
-              (
-                item: any,
-                index: number
-              ) => (
-
-                <tr key={index}>
-
-                  <td className="border p-2">
-                    {
-                      item.inward_date
-                    }
-                  </td>
-
-                  <td className="border p-2">
-                    {
-                      item.inward_month
-                    }
-                  </td>
-
-                  <td className="border p-2 font-bold">
-                    {
-                      item.material_code
-                    }
-                  </td>
-
-                  <td className="border p-2">
-                    {
-                      item.description
-                    }
-                  </td>
-
-                  <td className="border p-2">
-                    {
-                      item.uom
-                    }
-                  </td>
-
-                  <td className="border p-2">
-                    {
-                      item.vendor_name
-                    }
-                  </td>
-
-                  <td className="border p-2">
-                    {
-                      item.invoice_no
-                    }
-                  </td>
-
-                  <td className="border p-2 text-green-600 font-bold">
-                    {
-                      item.good_qty
-                    }
-                  </td>
-
-                  <td className="border p-2 text-red-600 font-bold">
-                    {
-                      item.ng_qty
-                    }
-                  </td>
-
-                  <td className="border p-2">
-                    {
-                      item.remarks
-                    }
-                  </td>
-
-                </tr>
-
-              )
-            )}
-
-          </tbody>
-
-        </table>
 
       </div>
 
