@@ -39,27 +39,52 @@ export async function PUT(
     const body =
       await request.json();
 
-    await sql`
+    if (
+      body.projection_action !==
+      undefined
+    ) {
 
-      UPDATE projection_master
+      await sql`
 
-      SET
+        UPDATE projection_master
 
-        projection_action =
-        ${body.projection_action},
+        SET
 
-        stock_qty =
-        ${Number(
-          body.stock_qty || 0
-        )},
+          projection_action =
+          ${body.projection_action}
 
-        stock_action =
-        ${body.stock_action}
+        WHERE id =
+        ${body.id}
 
-      WHERE id =
-      ${body.id}
+      `;
 
-    `;
+    }
+
+    if (
+      body.stock_action !==
+      undefined
+    ) {
+
+      await sql`
+
+        UPDATE projection_master
+
+        SET
+
+          stock_qty =
+          ${Number(
+            body.stock_qty || 0
+          )},
+
+          stock_action =
+          ${body.stock_action}
+
+        WHERE id =
+        ${body.id}
+
+      `;
+
+    }
 
     return NextResponse.json({
 
