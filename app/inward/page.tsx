@@ -77,7 +77,7 @@ export default function InwardPage() {
 
       const response =
         await fetch(
-          "/api/material-master"
+          "/api/material"
         );
 
       const result =
