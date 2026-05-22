@@ -1,3 +1,35 @@
+import { NextResponse } from "next/server";
+import sql from "@/lib/db";
+
+export async function GET() {
+
+  try {
+
+    const data =
+      await sql`
+
+        SELECT *
+
+        FROM projection_master
+
+        ORDER BY id DESC
+
+      `;
+
+    return NextResponse.json(
+      data
+    );
+
+  } catch (error) {
+
+    console.log(error);
+
+    return NextResponse.json([]);
+
+  }
+
+}
+
 export async function PUT(
   request: Request
 ) {
@@ -8,7 +40,8 @@ export async function PUT(
       await request.json();
 
     if (
-      body.projection_action
+      body.projection_action !==
+      undefined
     ) {
 
       await sql`
@@ -28,7 +61,8 @@ export async function PUT(
     }
 
     if (
-      body.stock_action
+      body.stock_action !==
+      undefined
     ) {
 
       await sql`
@@ -49,6 +83,45 @@ export async function PUT(
       `;
 
     }
+
+    return NextResponse.json({
+
+      success: true
+
+    });
+
+  } catch (error) {
+
+    console.log(error);
+
+    return NextResponse.json({
+
+      success: false
+
+    });
+
+  }
+
+}
+
+export async function DELETE(
+  request: Request
+) {
+
+  try {
+
+    const body =
+      await request.json();
+
+    await sql`
+
+      DELETE FROM
+      projection_master
+
+      WHERE id =
+      ${body.id}
+
+    `;
 
     return NextResponse.json({
 
