@@ -65,6 +65,62 @@ export async function PUT(
       undefined
     ) {
 
+      const existing =
+        await sql`
+
+          SELECT *
+
+          FROM projection_master
+
+          WHERE id =
+          ${body.id}
+
+        `;
+
+      const row =
+        existing[0];
+
+      const projectionQty =
+        Number(
+          row.projection_qty || 0
+        );
+
+      const stockQty =
+        Number(
+          body.stock_qty || 0
+        );
+
+      let balanceQty = 0;
+
+      let returnedLiveStock = 0;
+
+      if (
+        body.stock_action ===
+        "Issue"
+      ) {
+
+        balanceQty =
+          projectionQty -
+          stockQty;
+
+        returnedLiveStock =
+          balanceQty;
+
+      }
+
+      if (
+        body.stock_action ===
+        "Not Issue"
+      ) {
+
+        balanceQty =
+          projectionQty;
+
+        returnedLiveStock =
+          projectionQty;
+
+      }
+
       await sql`
 
         UPDATE projection_master
@@ -72,10 +128,16 @@ export async function PUT(
         SET
 
           stock_qty =
-          ${body.stock_qty || 0},
+          ${stockQty},
 
           stock_action =
-          ${body.stock_action}
+          ${body.stock_action},
+
+          balance_qty =
+          ${balanceQty},
+
+          returned_live_stock =
+          ${returnedLiveStock}
 
         WHERE id =
         ${body.id}
