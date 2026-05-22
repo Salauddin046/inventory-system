@@ -8,35 +8,12 @@ export default function ProjectionMasterPage() {
   const [projectionData, setProjectionData] =
     useState<any[]>([]);
 
-  const [materials, setMaterials] =
-    useState<any[]>([]);
-
-  const [form, setForm] =
-    useState({
-
-      projection_month: "",
-
-      revision_no: "",
-
-      material_code: "",
-
-      description: "",
-
-      projection_qty: "",
-
-      projection_action: "",
-
-      stock_qty: "",
-
-      stock_action: ""
-
-    });
+  const [loading, setLoading] =
+    useState(false);
 
   useEffect(() => {
 
     fetchProjectionData();
-
-    fetchMaterials();
 
   }, []);
 
@@ -73,67 +50,21 @@ export default function ProjectionMasterPage() {
 
   }
 
-  async function fetchMaterials() {
-
-    try {
-
-      const response =
-        await fetch(
-          "/api/materials"
-        );
-
-      const result =
-        await response.json();
-
-      if (
-        Array.isArray(result)
-      ) {
-
-        setMaterials(result);
-
-      }
-
-    } catch (error) {
-
-      console.log(error);
-
-    }
-
-  }
-
-  function handleMaterialChange(
-    value: string
+  async function handleProjectionAction(
+    id: number,
+    action: string
   ) {
 
-    const selected =
-      materials.find(
-        (item: any) =>
-          item.material_code === value
-      );
-
-    setForm({
-
-      ...form,
-
-      material_code: value,
-
-      description:
-        selected?.description || ""
-
-    });
-
-  }
-
-  async function handleProjectionSubmit() {
-
     try {
+
+      setLoading(true);
 
       const response =
         await fetch(
           "/api/projection-master",
           {
 
-            method: "POST",
+            method: "PUT",
 
             headers: {
               "Content-Type":
@@ -143,10 +74,12 @@ export default function ProjectionMasterPage() {
             body:
               JSON.stringify({
 
-                ...form,
+                id,
 
                 type:
-                  "projection"
+                  "projection",
+
+                action
 
               })
 
@@ -159,7 +92,7 @@ export default function ProjectionMasterPage() {
       if (result.success) {
 
         alert(
-          "Projection Updated"
+          "Projection Action Updated"
         );
 
         fetchProjectionData();
@@ -170,20 +103,29 @@ export default function ProjectionMasterPage() {
 
       console.log(error);
 
+    } finally {
+
+      setLoading(false);
+
     }
 
   }
 
-  async function handleStockSubmit() {
+  async function handleStockAction(
+    id: number,
+    action: string
+  ) {
 
     try {
+
+      setLoading(true);
 
       const response =
         await fetch(
           "/api/projection-master",
           {
 
-            method: "POST",
+            method: "PUT",
 
             headers: {
               "Content-Type":
@@ -193,10 +135,12 @@ export default function ProjectionMasterPage() {
             body:
               JSON.stringify({
 
-                ...form,
+                id,
 
                 type:
-                  "stock"
+                  "stock",
+
+                action
 
               })
 
@@ -219,6 +163,10 @@ export default function ProjectionMasterPage() {
     } catch (error) {
 
       console.log(error);
+
+    } finally {
+
+      setLoading(false);
 
     }
 
@@ -289,206 +237,6 @@ export default function ProjectionMasterPage() {
         Projection Master
       </h1>
 
-      <div className="grid grid-cols-4 gap-4 mb-6">
-
-        <input
-          type="text"
-          placeholder="Projection Month"
-          value={form.projection_month}
-          onChange={(e) =>
-            setForm({
-              ...form,
-              projection_month:
-                e.target.value
-            })
-          }
-          className="border p-3 rounded"
-        />
-
-        <input
-          type="text"
-          placeholder="Revision No"
-          value={form.revision_no}
-          onChange={(e) =>
-            setForm({
-              ...form,
-              revision_no:
-                e.target.value
-            })
-          }
-          className="border p-3 rounded"
-        />
-
-        <select
-          value={form.material_code}
-          onChange={(e) =>
-            handleMaterialChange(
-              e.target.value
-            )
-          }
-          className="border p-3 rounded"
-        >
-
-          <option value="">
-            Select Material
-          </option>
-
-          {materials.map(
-            (item: any) => (
-
-              <option
-                key={item.id}
-                value={
-                  item.material_code
-                }
-              >
-
-                {
-                  item.material_code
-                }
-
-              </option>
-
-            )
-          )}
-
-        </select>
-
-        <input
-          type="text"
-          value={form.description}
-          readOnly
-          placeholder="Description"
-          className="
-            border
-            p-3
-            rounded
-            bg-gray-100
-          "
-        />
-
-        <input
-          type="number"
-          placeholder="Projection Qty"
-          value={form.projection_qty}
-          onChange={(e) =>
-            setForm({
-              ...form,
-              projection_qty:
-                e.target.value
-            })
-          }
-          className="border p-3 rounded"
-        />
-
-        <select
-          value={
-            form.projection_action
-          }
-          onChange={(e) =>
-            setForm({
-              ...form,
-              projection_action:
-                e.target.value
-            })
-          }
-          className="border p-3 rounded"
-        >
-
-          <option value="">
-            Projection Action
-          </option>
-
-          <option value="Allocate">
-            Allocate
-          </option>
-
-          <option value="Un Allocate">
-            Un Allocate
-          </option>
-
-        </select>
-
-        <input
-          type="number"
-          placeholder="Stock Qty"
-          value={form.stock_qty}
-          onChange={(e) =>
-            setForm({
-              ...form,
-              stock_qty:
-                e.target.value
-            })
-          }
-          className="border p-3 rounded"
-        />
-
-        <select
-          value={form.stock_action}
-          onChange={(e) =>
-            setForm({
-              ...form,
-              stock_action:
-                e.target.value
-            })
-          }
-          className="border p-3 rounded"
-        >
-
-          <option value="">
-            Stock Action
-          </option>
-
-          <option value="Issue">
-            Issue
-          </option>
-
-          <option value="Not Issue">
-            Not Issue
-          </option>
-
-          <option value="Clear">
-            Clear
-          </option>
-
-        </select>
-
-      </div>
-
-      <div className="flex gap-4 mb-6">
-
-        <button
-          onClick={
-            handleProjectionSubmit
-          }
-          className="
-            bg-blue-600
-            text-white
-            px-6
-            py-3
-            rounded
-          "
-        >
-          Projection Submit
-        </button>
-
-        <button
-          onClick={
-            handleStockSubmit
-          }
-          className="
-            bg-green-600
-            text-white
-            px-6
-            py-3
-            rounded
-          "
-        >
-          Stock Submit
-        </button>
-
-      </div>
-
       <div className="overflow-x-auto">
 
         <table className="w-full border border-collapse text-sm">
@@ -518,11 +266,15 @@ export default function ProjectionMasterPage() {
               </th>
 
               <th className="border p-3 text-center">
-                Projection Action
+                Allocation Qty
               </th>
 
               <th className="border p-3 text-center">
-                Stock Qty
+                Balance Qty
+              </th>
+
+              <th className="border p-3 text-center">
+                Projection Action
               </th>
 
               <th className="border p-3 text-center">
@@ -580,22 +332,112 @@ export default function ProjectionMasterPage() {
                       }
                     </td>
 
-                    <td className="border p-3 text-center">
-                      {
-                        item.projection_action
-                      }
-                    </td>
-
                     <td className="border p-3 text-center text-green-600 font-bold">
                       {
-                        item.stock_qty
+                        item.allocation_qty || 0
+                      }
+                    </td>
+
+                    <td className="border p-3 text-center text-purple-600 font-bold">
+                      {
+                        item.balance_qty || 0
                       }
                     </td>
 
                     <td className="border p-3 text-center">
-                      {
-                        item.stock_action
-                      }
+
+                      <div className="flex justify-center gap-2">
+
+                        <button
+                          disabled={
+                            item.stock_action ===
+                            "Issue"
+                          }
+                          onClick={() =>
+                            handleProjectionAction(
+                              item.id,
+                              "Allocate"
+                            )
+                          }
+                          className="
+                            bg-blue-600
+                            text-white
+                            px-3
+                            py-1
+                            rounded
+                          "
+                        >
+                          Allocate
+                        </button>
+
+                        <button
+                          disabled={
+                            item.stock_action ===
+                            "Issue"
+                          }
+                          onClick={() =>
+                            handleProjectionAction(
+                              item.id,
+                              "Un Allocate"
+                            )
+                          }
+                          className="
+                            bg-yellow-600
+                            text-white
+                            px-3
+                            py-1
+                            rounded
+                          "
+                        >
+                          Un Allocate
+                        </button>
+
+                      </div>
+
+                    </td>
+
+                    <td className="border p-3 text-center">
+
+                      <div className="flex justify-center gap-2">
+
+                        <button
+                          onClick={() =>
+                            handleStockAction(
+                              item.id,
+                              "Issue"
+                            )
+                          }
+                          className="
+                            bg-green-600
+                            text-white
+                            px-3
+                            py-1
+                            rounded
+                          "
+                        >
+                          Issue
+                        </button>
+
+                        <button
+                          onClick={() =>
+                            handleStockAction(
+                              item.id,
+                              "Not Issue"
+                            )
+                          }
+                          className="
+                            bg-red-600
+                            text-white
+                            px-3
+                            py-1
+                            rounded
+                          "
+                        >
+                          Not Issue
+                        </button>
+
+                      </div>
+
                     </td>
 
                     <td className="border p-3 text-center">
@@ -607,7 +449,7 @@ export default function ProjectionMasterPage() {
                           )
                         }
                         className="
-                          bg-red-600
+                          bg-black
                           text-white
                           px-3
                           py-1
@@ -629,14 +471,14 @@ export default function ProjectionMasterPage() {
               <tr>
 
                 <td
-                  colSpan={9}
+                  colSpan={10}
                   className="
                     border
                     p-4
                     text-center
                   "
                 >
-                  No Projection Data
+                  No Projection Data Found
                 </td>
 
               </tr>
@@ -648,6 +490,14 @@ export default function ProjectionMasterPage() {
         </table>
 
       </div>
+
+      {loading && (
+
+        <div className="mt-4 text-center font-bold">
+          Updating...
+        </div>
+
+      )}
 
     </div>
 
