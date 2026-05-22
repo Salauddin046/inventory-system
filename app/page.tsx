@@ -170,17 +170,17 @@ export default function DashboardPage() {
 
   return (
 
-    <div className="p-6 bg-gray-100 min-h-screen">
+    <div className="p-4 bg-gray-100 min-h-screen">
 
-      <h1 className="text-5xl font-bold mb-2">
+      <h1 className="text-4xl font-bold mb-1">
         Inventory Dashboard
       </h1>
 
-      <p className="text-gray-600 mb-10 text-xl">
+      <p className="text-gray-600 mb-6 text-lg">
         Live Inventory Monitoring System
       </p>
 
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-10">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
 
         {cards.map(
           (card, index) => (
@@ -191,17 +191,17 @@ export default function DashboardPage() {
                 bg-gradient-to-r
                 ${card.color}
                 text-white
-                rounded-2xl
-                shadow-lg
-                p-6
+                rounded-xl
+                shadow-md
+                p-4
               `}
             >
 
-              <h2 className="text-2xl font-semibold mb-4">
+              <h2 className="text-lg font-semibold mb-2">
                 {card.title}
               </h2>
 
-              <p className="text-5xl font-bold">
+              <p className="text-3xl font-bold">
 
                 {Number(
                   card.value || 0
@@ -216,7 +216,7 @@ export default function DashboardPage() {
 
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
 
         {modules.map(
           (module, index) => (
@@ -229,21 +229,21 @@ export default function DashboardPage() {
               <div
                 className="
                   bg-white
-                  rounded-2xl
+                  rounded-xl
                   shadow-md
-                  hover:shadow-xl
+                  hover:shadow-lg
                   transition
                   duration-300
-                  p-8
+                  p-6
                   cursor-pointer
                 "
               >
 
-                <h2 className="text-4xl font-bold mb-4">
+                <h2 className="text-2xl font-bold mb-3">
                   {module.title}
                 </h2>
 
-                <p className="text-gray-600 text-xl">
+                <p className="text-gray-600 text-base">
                   {
                     module.description
                   }
