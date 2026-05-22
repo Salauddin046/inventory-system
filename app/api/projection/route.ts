@@ -39,52 +39,36 @@ export async function PUT(
     const body =
       await request.json();
 
-    if (
-      body.projection_action !==
-      undefined
-    ) {
+    await sql`
 
-      await sql`
+      UPDATE projection_master
 
-        UPDATE projection_master
+      SET
 
-        SET
+        projection_action =
+        COALESCE(
+          ${body.projection_action},
+          projection_action
+        ),
 
-          projection_action =
-          ${body.projection_action}
+        stock_action =
+        COALESCE(
+          ${body.stock_action},
+          stock_action
+        ),
 
-        WHERE id =
-        ${body.id}
-
-      `;
-
-    }
-
-    if (
-      body.stock_action !==
-      undefined
-    ) {
-
-      await sql`
-
-        UPDATE projection_master
-
-        SET
-
-          stock_qty =
+        stock_qty =
+        COALESCE(
           ${Number(
             body.stock_qty || 0
           )},
+          stock_qty
+        )
 
-          stock_action =
-          ${body.stock_action}
+      WHERE id =
+      ${body.id}
 
-        WHERE id =
-        ${body.id}
-
-      `;
-
-    }
+    `;
 
     return NextResponse.json({
 
@@ -98,9 +82,46 @@ export async function PUT(
 
     return NextResponse.json({
 
-      success: false,
+      success: false
 
-      error: error.message
+    });
+
+  }
+
+}
+
+export async function DELETE(
+  request: Request
+) {
+
+  try {
+
+    const body =
+      await request.json();
+
+    await sql`
+
+      DELETE FROM
+      projection_master
+
+      WHERE id =
+      ${body.id}
+
+    `;
+
+    return NextResponse.json({
+
+      success: true
+
+    });
+
+  } catch (error: any) {
+
+    console.log(error);
+
+    return NextResponse.json({
+
+      success: false
 
     });
 
