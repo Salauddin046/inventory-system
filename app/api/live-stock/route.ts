@@ -37,8 +37,12 @@ export async function GET() {
 
             material_code,
 
-            SUM(g_qty)
-            AS inward_qty
+            SUM(
+              COALESCE(
+                g_qty,
+                0
+              )
+            ) AS inward_qty
 
           FROM inward_transactions
 
@@ -46,7 +50,8 @@ export async function GET() {
 
         ) i
 
-        ON m.material_code =
+        ON
+        m.material_code =
         i.material_code
 
         LEFT JOIN (
@@ -55,8 +60,12 @@ export async function GET() {
 
             material_code,
 
-            SUM(g_outward_qty)
-            AS outward_qty
+            SUM(
+              COALESCE(
+                g_outward_qty,
+                0
+              )
+            ) AS outward_qty
 
           FROM outward_transactions
 
@@ -64,7 +73,8 @@ export async function GET() {
 
         ) o
 
-        ON m.material_code =
+        ON
+        m.material_code =
         o.material_code
 
         LEFT JOIN (
@@ -73,19 +83,25 @@ export async function GET() {
 
             material_code,
 
-            SUM(projection_qty)
-            AS projection_qty
+            SUM(
+              COALESCE(
+                projection_qty,
+                0
+              )
+            ) AS projection_qty
 
           FROM projection_master
 
-          WHERE projection_action =
+          WHERE
+          projection_action =
           'Allocate'
 
           GROUP BY material_code
 
         ) p
 
-        ON m.material_code =
+        ON
+        m.material_code =
         p.material_code
 
         ORDER BY
