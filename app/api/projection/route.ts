@@ -8,7 +8,31 @@ export async function GET() {
     const data =
       await sql`
 
-        SELECT *
+        SELECT
+
+          id,
+
+          projection_month,
+
+          revision_no,
+
+          material_code,
+
+          description,
+
+          projection_qty,
+
+          projection_action,
+
+          stock_qty,
+
+          stock_action,
+
+          COALESCE(balance_qty, 0)
+          AS balance_qty,
+
+          COALESCE(returned_live_stock, 0)
+          AS returned_live_stock
 
         FROM projection_master
 
@@ -22,7 +46,10 @@ export async function GET() {
 
   } catch (error) {
 
-    console.log(error);
+    console.log(
+      "GET ERROR",
+      error
+    );
 
     return NextResponse.json([]);
 
@@ -166,7 +193,10 @@ export async function PUT(
 
   } catch (error) {
 
-    console.log(error);
+    console.log(
+      "PUT ERROR",
+      error
+    );
 
     return NextResponse.json({
 
@@ -205,7 +235,10 @@ export async function DELETE(
 
   } catch (error) {
 
-    console.log(error);
+    console.log(
+      "DELETE ERROR",
+      error
+    );
 
     return NextResponse.json({
 
