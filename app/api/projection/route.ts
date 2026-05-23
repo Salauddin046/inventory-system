@@ -8,31 +8,7 @@ export async function GET() {
     const data =
       await sql`
 
-        SELECT
-
-          id,
-
-          projection_month,
-
-          revision_no,
-
-          material_code,
-
-          description,
-
-          projection_qty,
-
-          projection_action,
-
-          stock_qty,
-
-          stock_action,
-
-          COALESCE(balance_qty, 0)
-          AS balance_qty,
-
-          COALESCE(returned_live_stock, 0)
-          AS returned_live_stock
+        SELECT *
 
         FROM projection_master
 
@@ -46,10 +22,7 @@ export async function GET() {
 
   } catch (error) {
 
-    console.log(
-      "GET ERROR",
-      error
-    );
+    console.log(error);
 
     return NextResponse.json([]);
 
@@ -83,9 +56,7 @@ export async function PUT(
     ) {
 
       return NextResponse.json({
-
         success: false
-
       });
 
     }
@@ -103,6 +74,28 @@ export async function PUT(
       undefined
     ) {
 
+      let balanceQty =
+        projectionQty;
+
+      if (
+        body.projection_action ===
+        "Allocate"
+      ) {
+
+        balanceQty =
+          projectionQty;
+
+      }
+
+      if (
+        body.projection_action ===
+        "Un Allocate"
+      ) {
+
+        balanceQty = 0;
+
+      }
+
       await sql`
 
         UPDATE projection_master
@@ -110,7 +103,10 @@ export async function PUT(
         SET
 
           projection_action =
-          ${body.projection_action}
+          ${body.projection_action},
+
+          balance_qty =
+          ${balanceQty}
 
         WHERE id =
         ${body.id}
@@ -186,22 +182,15 @@ export async function PUT(
     }
 
     return NextResponse.json({
-
       success: true
-
     });
 
   } catch (error) {
 
-    console.log(
-      "PUT ERROR",
-      error
-    );
+    console.log(error);
 
     return NextResponse.json({
-
       success: false
-
     });
 
   }
@@ -228,22 +217,15 @@ export async function DELETE(
     `;
 
     return NextResponse.json({
-
       success: true
-
     });
 
   } catch (error) {
 
-    console.log(
-      "DELETE ERROR",
-      error
-    );
+    console.log(error);
 
     return NextResponse.json({
-
       success: false
-
     });
 
   }
