@@ -11,6 +11,7 @@ interface JobCardItem {
   requested_qty: string | number;
   issued_qty: string | number;
   status: string;
+  uom: string | null;
 }
 
 interface JobCardDetail {
@@ -18,6 +19,10 @@ interface JobCardDetail {
   job_card_no: string;
   requester: string;
   request_date: string;
+  request_type: string | null;
+  from_store: string | null;
+  to_department: string | null;
+  reason: string | null;
   status: string;
   remarks: string | null;
   created_at: string;
@@ -47,10 +52,7 @@ export default function JobCardDetailPage() {
   const [issueQty, setIssueQty] = useState<Record<number, string>>({});
   const [submittingItemId, setSubmittingItemId] = useState<number | null>(null);
   const [deleting, setDeleting] = useState(false);
-  const [message, setMessage] = useState<{
-    type: "success" | "error";
-    text: string;
-  } | null>(null);
+  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   function showMessage(type: "success" | "error", text: string) {
     setMessage({ type, text });
@@ -90,6 +92,15 @@ export default function JobCardDetailPage() {
     }
   }
 
+  function monthYear(s: string) {
+    if (!s) return "";
+    try {
+      return new Date(s).toLocaleString("default", { month: "long", year: "numeric" });
+    } catch {
+      return "";
+    }
+  }
+
   async function handleIssue(item: JobCardItem) {
     const qty = Number(issueQty[item.id]);
     if (!Number.isFinite(qty) || qty <= 0) {
@@ -102,23 +113,17 @@ export default function JobCardDetailPage() {
     const remaining = requested - alreadyIssued;
 
     if (qty > remaining) {
-      showMessage(
-        "error",
-        `Cannot issue more than remaining (${remaining})`
-      );
+      showMessage("error", `Cannot issue more than remaining (${remaining})`);
       return;
     }
 
     setSubmittingItemId(item.id);
     try {
-      const response = await fetch(
-        `/api/job-cards/${id}/items/${item.id}/issue`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ issued_qty: qty }),
-        }
-      );
+      const response = await fetch(`/api/job-cards/${id}/items/${item.id}/issue`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ issued_qty: qty }),
+      });
 
       const result = await response.json().catch(() => ({}));
 
@@ -138,13 +143,7 @@ export default function JobCardDetailPage() {
   }
 
   async function handleDelete() {
-    if (
-      !confirm(
-        `Delete job card ${data?.job_card_no}? This cannot be undone.`
-      )
-    ) {
-      return;
-    }
+    if (!confirm(`Delete job card ${data?.job_card_no}? This cannot be undone.`)) return;
 
     setDeleting(true);
     try {
@@ -177,13 +176,9 @@ export default function JobCardDetailPage() {
     return (
       <div className="p-6">
         <Link href="/job-cards">
-          <button className="bg-gray-700 text-white px-4 py-2 rounded mb-4">
-            Back
-          </button>
+          <button className="bg-gray-700 text-white px-4 py-2 rounded mb-4">Back</button>
         </Link>
-        <div className="p-3 rounded bg-red-100 text-red-800">
-          {error || "Job card not found"}
-        </div>
+        <div className="p-3 rounded bg-red-100 text-red-800">{error || "Job card not found"}</div>
       </div>
     );
   }
@@ -219,30 +214,44 @@ export default function JobCardDetailPage() {
       {message && (
         <div
           className={`mb-4 p-3 rounded ${
-            message.type === "success"
-              ? "bg-green-100 text-green-800"
-              : "bg-red-100 text-red-800"
+            message.type === "success" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
           }`}
         >
           {message.text}
         </div>
       )}
 
-      <div className="grid grid-cols-3 gap-4 mb-6 bg-gray-50 p-4 rounded">
+      <div className="grid grid-cols-4 gap-4 mb-6 bg-gray-50 p-4 rounded">
         <div>
-          <div className="text-xs text-gray-500 mb-1">Requester</div>
-          <div className="font-medium">{data.requester}</div>
-        </div>
-        <div>
-          <div className="text-xs text-gray-500 mb-1">Request Date</div>
+          <div className="text-xs text-gray-500 mb-1">Date</div>
           <div className="font-medium">{formatDate(data.request_date)}</div>
         </div>
         <div>
-          <div className="text-xs text-gray-500 mb-1">Created</div>
-          <div className="font-medium">{formatDate(data.created_at)}</div>
+          <div className="text-xs text-gray-500 mb-1">Month & Year</div>
+          <div className="font-medium">{monthYear(data.request_date)}</div>
+        </div>
+        <div>
+          <div className="text-xs text-gray-500 mb-1">Requested By</div>
+          <div className="font-medium">{data.requester}</div>
+        </div>
+        <div>
+          <div className="text-xs text-gray-500 mb-1">Type of Request</div>
+          <div className="font-medium">{data.request_type || "—"}</div>
+        </div>
+        <div>
+          <div className="text-xs text-gray-500 mb-1">From</div>
+          <div className="font-medium">{data.from_store || "—"}</div>
+        </div>
+        <div>
+          <div className="text-xs text-gray-500 mb-1">To Department</div>
+          <div className="font-medium">{data.to_department || "—"}</div>
+        </div>
+        <div className="col-span-2">
+          <div className="text-xs text-gray-500 mb-1">Reason</div>
+          <div className="font-medium">{data.reason || "—"}</div>
         </div>
         {data.remarks && (
-          <div className="col-span-3">
+          <div className="col-span-4">
             <div className="text-xs text-gray-500 mb-1">Remarks</div>
             <div>{data.remarks}</div>
           </div>
@@ -258,6 +267,7 @@ export default function JobCardDetailPage() {
               <th className="border p-2 text-center">#</th>
               <th className="border p-2 text-center">Material Code</th>
               <th className="border p-2 text-center">Description</th>
+              <th className="border p-2 text-center">UoM</th>
               <th className="border p-2 text-center">Requested</th>
               <th className="border p-2 text-center">Issued</th>
               <th className="border p-2 text-center">Remaining</th>
@@ -277,22 +287,16 @@ export default function JobCardDetailPage() {
               return (
                 <tr key={item.id}>
                   <td className="border p-2 text-center">{index + 1}</td>
-                  <td className="border p-2 text-center font-bold">
-                    {item.material_code}
-                  </td>
+                  <td className="border p-2 text-center font-bold">{item.material_code}</td>
                   <td className="border p-2 text-center">{item.description}</td>
+                  <td className="border p-2 text-center">{item.uom || "—"}</td>
                   <td className="border p-2 text-center">{requested}</td>
-                  <td className="border p-2 text-center text-blue-600 font-medium">
-                    {issued}
-                  </td>
-                  <td className="border p-2 text-center text-orange-600 font-medium">
-                    {remaining}
-                  </td>
+                  <td className="border p-2 text-center text-blue-600 font-medium">{issued}</td>
+                  <td className="border p-2 text-center text-orange-600 font-medium">{remaining}</td>
                   <td className="border p-2 text-center">
                     <span
                       className={`px-2 py-1 rounded text-xs font-medium ${
-                        ITEM_STATUS_STYLES[item.status] ||
-                        "bg-gray-100 text-gray-800"
+                        ITEM_STATUS_STYLES[item.status] || "bg-gray-100 text-gray-800"
                       }`}
                     >
                       {item.status}
@@ -305,10 +309,7 @@ export default function JobCardDetailPage() {
                       step="any"
                       value={issueQty[item.id] || ""}
                       onChange={(e) =>
-                        setIssueQty((prev) => ({
-                          ...prev,
-                          [item.id]: e.target.value,
-                        }))
+                        setIssueQty((prev) => ({ ...prev, [item.id]: e.target.value }))
                       }
                       disabled={isFullyIssued || isSubmitting}
                       className="border p-1 rounded w-full"
@@ -332,8 +333,8 @@ export default function JobCardDetailPage() {
       </div>
 
       <div className="mt-4 text-sm text-gray-600">
-        <strong>Note:</strong> Clicking "Issue" only marks the job card as fulfilled. 
-        You must separately create an outward transaction on the Outward page to reduce live stock.
+        <strong>Note:</strong> Clicking "Issue" only marks the job card as fulfilled. You must
+        separately create an outward transaction on the Outward page to reduce live stock.
       </div>
     </div>
   );

@@ -3,6 +3,9 @@ import sql from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
 import { generateJobCardNumber } from "@/lib/job-card-number";
 
+const VALID_REQUEST_TYPES = ["Projection", "Adhoc", "Conversion", "Demo", "POC"];
+const FIXED_FROM_STORE = "Store 3";
+
 // GET /api/job-cards - list all job cards with quantity progress
 export async function GET() {
   const user = await getCurrentUser();
@@ -17,6 +20,10 @@ export async function GET() {
         jc.job_card_no,
         jc.requester,
         jc.request_date,
+        jc.request_type,
+        jc.from_store,
+        jc.to_department,
+        jc.reason,
         jc.status,
         jc.remarks,
         jc.created_at,
@@ -49,8 +56,17 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const { requester, request_date, remarks, items } = body;
+  const {
+    requester,
+    request_date,
+    request_type,
+    to_department,
+    reason,
+    remarks,
+    items,
+  } = body;
 
+  // Validation - header
   if (!requester || typeof requester !== "string" || !requester.trim()) {
     return NextResponse.json({ error: "Requester is required" }, { status: 400 });
   }
@@ -59,14 +75,36 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Request date is required" }, { status: 400 });
   }
 
+  if (!request_type || !VALID_REQUEST_TYPES.includes(request_type)) {
+    return NextResponse.json(
+      { error: `Request type must be one of: ${VALID_REQUEST_TYPES.join(", ")}` },
+      { status: 400 }
+    );
+  }
+
+  if (!to_department || typeof to_department !== "string" || !to_department.trim()) {
+    return NextResponse.json({ error: "To department is required" }, { status: 400 });
+  }
+
+  // Validation - items
   if (!Array.isArray(items) || items.length === 0) {
     return NextResponse.json({ error: "At least one material is required" }, { status: 400 });
   }
 
+  const seenCodes = new Set<string>();
   for (const item of items) {
     if (!item.material_code || typeof item.material_code !== "string") {
       return NextResponse.json({ error: "All items must have a material_code" }, { status: 400 });
     }
+
+    if (seenCodes.has(item.material_code)) {
+      return NextResponse.json(
+        { error: `Duplicate material in items: ${item.material_code}` },
+        { status: 400 }
+      );
+    }
+    seenCodes.add(item.material_code);
+
     const qty = Number(item.requested_qty);
     if (!Number.isFinite(qty) || qty <= 0) {
       return NextResponse.json(
@@ -81,8 +119,18 @@ export async function POST(request: Request) {
       const jobCardNo = await generateJobCardNumber(tx);
 
       const [jobCard] = await tx`
-        INSERT INTO job_cards (job_card_no, requester, request_date, remarks, created_by)
-        VALUES (${jobCardNo}, ${requester.trim()}, ${request_date}, ${remarks || null}, ${user.userId})
+        INSERT INTO job_cards (
+          job_card_no, requester, request_date,
+          request_type, from_store, to_department, reason,
+          remarks, created_by
+        )
+        VALUES (
+          ${jobCardNo}, ${requester.trim()}, ${request_date},
+          ${request_type}, ${FIXED_FROM_STORE}, ${to_department.trim()},
+          ${reason ? String(reason).trim() : null},
+          ${remarks ? String(remarks).trim() : null},
+          ${user.userId}
+        )
         RETURNING id, job_card_no
       `;
 

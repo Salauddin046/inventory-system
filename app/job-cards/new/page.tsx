@@ -11,47 +11,76 @@ interface Material {
   uom?: string;
 }
 
+interface Department {
+  id: number;
+  name: string;
+}
+
 interface ItemRow {
   material_code: string;
   description: string;
+  uom: string;
   requested_qty: string;
 }
 
+const REQUEST_TYPES = ["Projection", "Adhoc", "Conversion", "Demo", "POC"];
+const FROM_STORE = "Store 3";
+
 function emptyRow(): ItemRow {
-  return { material_code: "", description: "", requested_qty: "" };
+  return { material_code: "", description: "", uom: "", requested_qty: "" };
 }
 
 export default function NewJobCardPage() {
   const router = useRouter();
-
   const today = new Date().toISOString().split("T")[0];
 
   const [materials, setMaterials] = useState<Material[]>([]);
+  const [departments, setDepartments] = useState<Department[]>([]);
+
   const [requester, setRequester] = useState("");
   const [requestDate, setRequestDate] = useState(today);
+  const [requestType, setRequestType] = useState("");
+  const [toDepartment, setToDepartment] = useState("");
+  const [reason, setReason] = useState("");
   const [remarks, setRemarks] = useState("");
   const [items, setItems] = useState<ItemRow[]>([emptyRow()]);
+
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchMaterials();
+    fetchInitialData();
   }, []);
 
-  async function fetchMaterials() {
+  async function fetchInitialData() {
     try {
-      const response = await fetch("/api/materials", { cache: "no-store" });
-      if (!response.ok) {
-        setError("Failed to load materials list");
-        return;
+      const [matRes, deptRes] = await Promise.all([
+        fetch("/api/materials", { cache: "no-store" }),
+        fetch("/api/departments", { cache: "no-store" }),
+      ]);
+
+      if (matRes.ok) {
+        const matData = await matRes.json();
+        if (Array.isArray(matData)) setMaterials(matData);
       }
-      const result = await response.json();
-      if (Array.isArray(result)) {
-        setMaterials(result);
+
+      if (deptRes.ok) {
+        const deptData = await deptRes.json();
+        if (Array.isArray(deptData)) setDepartments(deptData);
       }
     } catch (err) {
       console.error(err);
-      setError("Network error loading materials");
+      setError("Failed to load form data");
+    }
+  }
+
+  function monthYear(dateStr: string): string {
+    if (!dateStr) return "";
+    try {
+      const d = new Date(dateStr);
+      return d.toLocaleString("default", { month: "long", year: "numeric" });
+    } catch {
+      return "";
     }
   }
 
@@ -70,6 +99,7 @@ export default function NewJobCardPage() {
               ...row,
               material_code: code,
               description: material?.description || "",
+              uom: material?.uom || "",
             }
           : row
       )
@@ -92,18 +122,23 @@ export default function NewJobCardPage() {
     e.preventDefault();
     setError(null);
 
-    // Validation
     if (!requester.trim()) {
       setError("Requester is required");
       return;
     }
-
     if (!requestDate) {
       setError("Request date is required");
       return;
     }
+    if (!requestType) {
+      setError("Request type is required");
+      return;
+    }
+    if (!toDepartment) {
+      setError("To department is required");
+      return;
+    }
 
-    // Validate items
     const validatedItems = [];
     const seenCodes = new Set<string>();
 
@@ -114,7 +149,6 @@ export default function NewJobCardPage() {
         setError(`Row ${i + 1}: select a material`);
         return;
       }
-
       if (seenCodes.has(row.material_code)) {
         setError(`Row ${i + 1}: ${row.material_code} appears more than once`);
         return;
@@ -142,6 +176,9 @@ export default function NewJobCardPage() {
         body: JSON.stringify({
           requester: requester.trim(),
           request_date: requestDate,
+          request_type: requestType,
+          to_department: toDepartment,
+          reason: reason.trim() || null,
           remarks: remarks.trim() || null,
           items: validatedItems,
         }),
@@ -178,25 +215,10 @@ export default function NewJobCardPage() {
       )}
 
       <form onSubmit={handleSubmit}>
-        <div className="grid grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-4 gap-4 mb-4">
           <div>
             <label className="block text-sm font-medium mb-1">
-              Requester <span className="text-red-600">*</span>
-            </label>
-            <input
-              type="text"
-              value={requester}
-              onChange={(e) => setRequester(e.target.value)}
-              required
-              disabled={submitting}
-              className="w-full border p-2 rounded"
-              placeholder="Production / Operation name"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1">
-              Request Date <span className="text-red-600">*</span>
+              Date <span className="text-red-600">*</span>
             </label>
             <input
               type="date"
@@ -209,19 +231,106 @@ export default function NewJobCardPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Remarks</label>
+            <label className="block text-sm font-medium mb-1">Month & Year</label>
             <input
               type="text"
-              value={remarks}
-              onChange={(e) => setRemarks(e.target.value)}
+              value={monthYear(requestDate)}
+              readOnly
+              className="w-full border p-2 rounded bg-gray-100"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">
+              Requested By <span className="text-red-600">*</span>
+            </label>
+            <input
+              type="text"
+              value={requester}
+              onChange={(e) => setRequester(e.target.value)}
+              required
               disabled={submitting}
               className="w-full border p-2 rounded"
-              placeholder="Optional notes"
+              placeholder="Your name"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">
+              Type of Request <span className="text-red-600">*</span>
+            </label>
+            <select
+              value={requestType}
+              onChange={(e) => setRequestType(e.target.value)}
+              required
+              disabled={submitting}
+              className="w-full border p-2 rounded"
+            >
+              <option value="">Select type</option>
+              {REQUEST_TYPES.map((t) => (
+                <option key={t} value={t}>
+                  {t}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">From</label>
+            <input
+              type="text"
+              value={FROM_STORE}
+              readOnly
+              className="w-full border p-2 rounded bg-gray-100"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">
+              To Department <span className="text-red-600">*</span>
+            </label>
+            <select
+              value={toDepartment}
+              onChange={(e) => setToDepartment(e.target.value)}
+              required
+              disabled={submitting}
+              className="w-full border p-2 rounded"
+            >
+              <option value="">Select department</option>
+              {departments.map((d) => (
+                <option key={d.id} value={d.name}>
+                  {d.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="col-span-2">
+            <label className="block text-sm font-medium mb-1">Reason for Request</label>
+            <input
+              type="text"
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              disabled={submitting}
+              className="w-full border p-2 rounded"
+              placeholder="Optional"
             />
           </div>
         </div>
 
-        <h2 className="text-xl font-semibold mb-3">Materials Required</h2>
+        <div className="mb-4">
+          <label className="block text-sm font-medium mb-1">Remarks</label>
+          <input
+            type="text"
+            value={remarks}
+            onChange={(e) => setRemarks(e.target.value)}
+            disabled={submitting}
+            className="w-full border p-2 rounded"
+            placeholder="Optional general notes"
+          />
+        </div>
+
+        <h2 className="text-xl font-semibold mb-3 mt-6">Materials Required</h2>
 
         <div className="overflow-x-auto mb-4">
           <table className="w-full border border-collapse text-sm">
@@ -231,6 +340,7 @@ export default function NewJobCardPage() {
                 <th className="border p-2 text-center">Material Code</th>
                 <th className="border p-2 text-center">Description</th>
                 <th className="border p-2 text-center w-32">Quantity</th>
+                <th className="border p-2 text-center w-20">UoM</th>
                 <th className="border p-2 text-center w-24">Action</th>
               </tr>
             </thead>
@@ -267,11 +377,17 @@ export default function NewJobCardPage() {
                       min="0"
                       step="any"
                       value={row.requested_qty}
-                      onChange={(e) =>
-                        updateRow(index, "requested_qty", e.target.value)
-                      }
+                      onChange={(e) => updateRow(index, "requested_qty", e.target.value)}
                       disabled={submitting}
                       className="border p-1 rounded w-full"
+                    />
+                  </td>
+                  <td className="border p-2">
+                    <input
+                      type="text"
+                      value={row.uom}
+                      readOnly
+                      className="border p-1 rounded w-full bg-gray-100 text-center"
                     />
                   </td>
                   <td className="border p-2 text-center">

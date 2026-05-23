@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import sql from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
 
-// GET /api/job-cards/[id] - get job card with line items
+// GET /api/job-cards/[id] - get job card with line items (including UoM from material_master)
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -20,7 +20,9 @@ export async function GET(
 
   try {
     const [jobCard] = await sql`
-      SELECT id, job_card_no, requester, request_date, status, remarks, created_at
+      SELECT id, job_card_no, requester, request_date,
+             request_type, from_store, to_department, reason,
+             status, remarks, created_at
       FROM job_cards
       WHERE id = ${id}
     `;
@@ -30,10 +32,18 @@ export async function GET(
     }
 
     const items = await sql`
-      SELECT id, material_code, description, requested_qty, issued_qty, status
-      FROM job_card_items
-      WHERE job_card_id = ${id}
-      ORDER BY id ASC
+      SELECT
+        jci.id,
+        jci.material_code,
+        jci.description,
+        jci.requested_qty,
+        jci.issued_qty,
+        jci.status,
+        m.uom
+      FROM job_card_items jci
+      LEFT JOIN material_master m ON m.material_code = jci.material_code
+      WHERE jci.job_card_id = ${id}
+      ORDER BY jci.id ASC
     `;
 
     return NextResponse.json({ ...jobCard, items });
