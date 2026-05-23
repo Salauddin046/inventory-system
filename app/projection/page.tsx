@@ -34,7 +34,12 @@ const COLUMNS = [
 ];
 
 export default function ProjectionPage() {
+  // savedActions tracks what's actually saved in the DB
+  // (separate from the in-memory edits in projectionData)
   const [projectionData, setProjectionData] = useState<ProjectionRow[]>([]);
+  const [savedStockActions, setSavedStockActions] = useState
+    Record<number, string | null>
+  >({});
   const [loading, setLoading] = useState(false);
   const [submittingId, setSubmittingId] = useState<number | null>(null);
   const [message, setMessage] = useState<{
@@ -57,6 +62,13 @@ export default function ProjectionPage() {
       const result = await response.json();
       if (Array.isArray(result)) {
         setProjectionData(result);
+        // Capture the DB-saved stock_action separately, so dropdown changes
+        // don't accidentally lock the row before Submit
+        const saved: Record<number, string | null> = {};
+        result.forEach((row: ProjectionRow) => {
+          saved[row.id] = row.stock_action || null;
+        });
+        setSavedStockActions(saved);
       } else {
         showMessage("error", "Failed to load projections");
       }
@@ -237,9 +249,10 @@ export default function ProjectionPage() {
             ) : (
               projectionData.map((item, index) => {
                 const isSubmitting = submittingId === item.id;
-                const isIssued = item.stock_action === "Issue";
-                const isNotIssued = item.stock_action === "Not Issue";
-                const isTerminal = isIssued || isNotIssued;
+                // Lock is based on what's SAVED in DB, not what's selected in dropdown
+                const savedAction = savedStockActions[item.id];
+                const isTerminal =
+                  savedAction === "Issue" || savedAction === "Not Issue";
 
                 return (
                   <tr key={item.id}>
@@ -327,7 +340,7 @@ export default function ProjectionPage() {
                     </td>
 
                     <td className="border p-2 text-center text-red-600 font-bold">
-                      {isIssued ? item.stock_qty || 0 : 0}
+                      {savedAction === "Issue" ? item.stock_qty || 0 : 0}
                     </td>
 
                     <td className="border p-2 text-center text-green-600 font-bold">
