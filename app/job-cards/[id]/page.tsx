@@ -50,7 +50,6 @@ export default function JobCardDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [issueQty, setIssueQty] = useState<Record<number, string>>({});
-  const [submittingItemId, setSubmittingItemId] = useState<number | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
@@ -101,7 +100,9 @@ export default function JobCardDetailPage() {
     }
   }
 
-  async function handleIssue(item: JobCardItem) {
+  function handleIssue(item: JobCardItem) {
+    if (!data) return;
+
     const qty = Number(issueQty[item.id]);
     if (!Number.isFinite(qty) || qty <= 0) {
       showMessage("error", "Enter a valid issue quantity");
@@ -117,29 +118,18 @@ export default function JobCardDetailPage() {
       return;
     }
 
-    setSubmittingItemId(item.id);
-    try {
-      const response = await fetch(`/api/job-cards/${id}/items/${item.id}/issue`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ issued_qty: qty }),
-      });
+    // Navigate to Outward page with pre-fill query params
+    const params = new URLSearchParams({
+      material_code: item.material_code,
+      description: item.description || "",
+      qty: String(qty),
+      job_card_id: String(data.id),
+      job_card_item_id: String(item.id),
+      job_card_no: data.job_card_no,
+      outward_type: data.request_type || "",
+    });
 
-      const result = await response.json().catch(() => ({}));
-
-      if (response.ok && result.success) {
-        showMessage("success", `Issued ${qty} units`);
-        setIssueQty((prev) => ({ ...prev, [item.id]: "" }));
-        fetchData();
-      } else {
-        showMessage("error", result.error || "Issue failed");
-      }
-    } catch (err) {
-      console.error(err);
-      showMessage("error", "Network error");
-    } finally {
-      setSubmittingItemId(null);
-    }
+    router.push(`/outward?${params.toString()}`);
   }
 
   async function handleDelete() {
@@ -292,7 +282,6 @@ export default function JobCardDetailPage() {
               const issued = Number(item.issued_qty || 0);
               const remaining = requested - issued;
               const isFullyIssued = item.status === "Issued";
-              const isSubmitting = submittingItemId === item.id;
 
               return (
                 <tr key={item.id}>
@@ -321,7 +310,7 @@ export default function JobCardDetailPage() {
                       onChange={(e) =>
                         setIssueQty((prev) => ({ ...prev, [item.id]: e.target.value }))
                       }
-                      disabled={isFullyIssued || isSubmitting}
+                      disabled={isFullyIssued}
                       className="border p-1 rounded w-full"
                       placeholder={isFullyIssued ? "—" : String(remaining)}
                     />
@@ -329,10 +318,10 @@ export default function JobCardDetailPage() {
                   <td className="border p-2 text-center">
                     <button
                       onClick={() => handleIssue(item)}
-                      disabled={isFullyIssued || isSubmitting}
+                      disabled={isFullyIssued}
                       className="bg-blue-600 text-white px-3 py-1 rounded text-xs disabled:opacity-50"
                     >
-                      {isSubmitting ? "..." : "Issue"}
+                      Issue
                     </button>
                   </td>
                 </tr>
@@ -343,8 +332,8 @@ export default function JobCardDetailPage() {
       </div>
 
       <div className="mt-4 text-sm text-gray-600">
-        <strong>Note:</strong> Clicking "Issue" only marks the job card as fulfilled. You must
-        separately create an outward transaction on the Outward page to reduce live stock.
+        <strong>Note:</strong> Clicking "Issue" opens the Outward form pre-filled with material and quantity.
+        The job card item will be marked as issued only after you complete and save the outward entry.
       </div>
     </div>
   );
