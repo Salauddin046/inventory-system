@@ -1,124 +1,69 @@
 import { NextResponse } from "next/server";
 import sql from "@/lib/db";
 
-export async function GET() {
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const limit = Math.min(Number(searchParams.get("limit")) || 100, 500);
+  const offset = Number(searchParams.get("offset")) || 0;
+  const search = searchParams.get("search")?.trim() || "";
 
   try {
-
     const data = await sql`
-
       SELECT
-
         m.material_code,
-
         m.description,
-
-        COALESCE(i.good_inward, 0)
-        AS good_inward,
-
-        COALESCE(i.ng_inward, 0)
-        AS ng_inward,
-
-        COALESCE(o.good_outward, 0)
-        AS good_outward,
-
-        COALESCE(o.ng_outward, 0)
-        AS ng_outward,
-
-        COALESCE(p.balance_qty, 0)
-        AS projection_qty,
-
-        (
-
+        COALESCE(i.good_inward, 0) AS good_inward,
+        COALESCE(i.ng_inward, 0) AS ng_inward,
+        COALESCE(o.good_outward, 0) AS good_outward,
+        COALESCE(o.ng_outward, 0) AS ng_outward,
+        COALESCE(p.allocated_qty, 0) AS projection_qty,
+        GREATEST(
           COALESCE(i.good_inward, 0)
-
-          -
-
-          COALESCE(o.good_outward, 0)
-
-          -
-
-          COALESCE(p.balance_qty, 0)
-
-        ) AS live_stock
-
+          - COALESCE(o.good_outward, 0)
+          - COALESCE(p.allocated_qty, 0),
+          0
+        ) AS live_stock,
+        (
+          COALESCE(i.good_inward, 0)
+          - COALESCE(o.good_outward, 0)
+          - COALESCE(p.allocated_qty, 0)
+        ) < 0 AS is_over_allocated,
+        COALESCE(i.ng_inward, 0) - COALESCE(o.ng_outward, 0) AS ng_stock
       FROM material_master m
-
       LEFT JOIN (
-
-        SELECT
-
-          material_code,
-
-          SUM(g_qty)
-          AS good_inward,
-
-          SUM(ng_qty)
-          AS ng_inward
-
+        SELECT material_code,
+               SUM(g_qty) AS good_inward,
+               SUM(ng_qty) AS ng_inward
         FROM inward_transactions
-
         GROUP BY material_code
-
-      ) i
-
-      ON m.material_code =
-      i.material_code
-
+      ) i ON m.material_code = i.material_code
       LEFT JOIN (
-
-        SELECT
-
-          material_code,
-
-          SUM(g_outward_qty)
-          AS good_outward,
-
-          SUM(ng_outward_qty)
-          AS ng_outward
-
+        SELECT material_code,
+               SUM(g_outward_qty) AS good_outward,
+               SUM(ng_outward_qty) AS ng_outward
         FROM outward_transactions
-
         GROUP BY material_code
-
-      ) o
-
-      ON m.material_code =
-      o.material_code
-
+      ) o ON m.material_code = o.material_code
       LEFT JOIN (
-
-        SELECT
-
-          material_code,
-
-          SUM(balance_qty)
-          AS balance_qty
-
+        SELECT material_code,
+               SUM(allocated_qty) AS allocated_qty
         FROM projection_master
-
         GROUP BY material_code
-
-      ) p
-
-      ON m.material_code =
-      p.material_code
-
-      ORDER BY
-      m.material_code ASC
-
+      ) p ON m.material_code = p.material_code
+      WHERE ${search ? sql`(
+        m.material_code ILIKE ${"%" + search + "%"}
+        OR m.description ILIKE ${"%" + search + "%"}
+      )` : sql`TRUE`}
+      ORDER BY m.material_code ASC
+      LIMIT ${limit} OFFSET ${offset}
     `;
 
-    return NextResponse.json(
-      data
-    );
-
+    return NextResponse.json(data);
   } catch (error) {
-
-    console.log(error);
-
-    return NextResponse.json([]);
-
+    console.error("GET /stock failed:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch stock data" },
+      { status: 500 }
+    );
   }
-
 }
