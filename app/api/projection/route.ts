@@ -39,6 +39,38 @@ export async function PUT(
     const body =
       await request.json();
 
+    const existing =
+      await sql`
+
+        SELECT *
+
+        FROM projection_master
+
+        WHERE id =
+        ${body.id}
+
+      `;
+
+    if (
+      existing.length === 0
+    ) {
+
+      return NextResponse.json({
+
+        success: false
+
+      });
+
+    }
+
+    const row =
+      existing[0];
+
+    const projectionQty =
+      Number(
+        row.projection_qty || 0
+      );
+
     if (
       body.projection_action !==
       undefined
@@ -64,26 +96,6 @@ export async function PUT(
       body.stock_action !==
       undefined
     ) {
-
-      const existing =
-        await sql`
-
-          SELECT *
-
-          FROM projection_master
-
-          WHERE id =
-          ${body.id}
-
-        `;
-
-      const row =
-        existing[0];
-
-      const projectionQty =
-        Number(
-          row.projection_qty || 0
-        );
 
       const stockQty =
         Number(

@@ -25,7 +25,7 @@ export async function GET() {
         COALESCE(o.ng_outward, 0)
         AS ng_outward,
 
-        COALESCE(p.projection_qty, 0)
+        COALESCE(p.balance_qty, 0)
         AS projection_qty,
 
         (
@@ -38,7 +38,7 @@ export async function GET() {
 
           -
 
-          COALESCE(p.projection_qty, 0)
+          COALESCE(p.balance_qty, 0)
 
         ) AS live_stock
 
@@ -50,9 +50,11 @@ export async function GET() {
 
           material_code,
 
-          SUM(g_qty) AS good_inward,
+          SUM(g_qty)
+          AS good_inward,
 
-          SUM(ng_qty) AS ng_inward
+          SUM(ng_qty)
+          AS ng_inward
 
         FROM inward_transactions
 
@@ -90,8 +92,8 @@ export async function GET() {
 
           material_code,
 
-          SUM(projection_qty)
-          AS projection_qty
+          SUM(balance_qty)
+          AS balance_qty
 
         FROM projection_master
 
