@@ -47,8 +47,26 @@ export default function ProjectionPage() {
 
   }
 
-  async function updateProjection(
-    data: any
+  function handleChange(
+    index: number,
+    field: string,
+    value: string
+  ) {
+
+    const updated =
+      [...projectionData];
+
+    updated[index][field] =
+      value;
+
+    setProjectionData(
+      updated
+    );
+
+  }
+
+  async function submitProjection(
+    item: any
   ) {
 
     try {
@@ -66,7 +84,14 @@ export default function ProjectionPage() {
             },
 
             body:
-              JSON.stringify(data)
+              JSON.stringify({
+
+                id: item.id,
+
+                projection_action:
+                  item.projection_action
+
+              })
 
           }
         );
@@ -77,7 +102,7 @@ export default function ProjectionPage() {
       if (result.success) {
 
         alert(
-          "Updated Successfully"
+          "Projection Updated Successfully"
         );
 
         fetchData();
@@ -92,21 +117,107 @@ export default function ProjectionPage() {
 
   }
 
-  function handleChange(
-    index: number,
-    field: string,
-    value: string
+  async function submitStock(
+    item: any
   ) {
 
-    const updated =
-      [...projectionData];
+    try {
 
-    updated[index][field] =
-      value;
+      const response =
+        await fetch(
+          "/api/projection",
+          {
 
-    setProjectionData(
-      updated
-    );
+            method: "PUT",
+
+            headers: {
+              "Content-Type":
+                "application/json"
+            },
+
+            body:
+              JSON.stringify({
+
+                id: item.id,
+
+                stock_qty:
+                  Number(
+                    item.stock_qty || 0
+                  ),
+
+                stock_action:
+                  item.stock_action
+
+              })
+
+          }
+        );
+
+      const result =
+        await response.json();
+
+      if (result.success) {
+
+        alert(
+          "Stock Updated Successfully"
+        );
+
+        fetchData();
+
+      }
+
+    } catch (error) {
+
+      console.log(error);
+
+    }
+
+  }
+
+  async function clearProjection(
+    id: number
+  ) {
+
+    try {
+
+      const response =
+        await fetch(
+          "/api/projection",
+          {
+
+            method: "DELETE",
+
+            headers: {
+              "Content-Type":
+                "application/json"
+            },
+
+            body:
+              JSON.stringify({
+                id
+              })
+
+          }
+        );
+
+      const result =
+        await response.json();
+
+      if (result.success) {
+
+        alert(
+          "Projection Cleared Successfully"
+        );
+
+        fetchData();
+
+      }
+
+    } catch (error) {
+
+      console.log(error);
+
+    }
 
   }
 
@@ -211,301 +322,223 @@ export default function ProjectionPage() {
                 (
                   item: any,
                   index: number
-                ) => {
+                ) => (
 
-                  const projectionQty =
-                    Number(
-                      item.projection_qty || 0
-                    );
+                  <tr key={item.id}>
 
-                  const stockQty =
-                    Number(
-                      item.stock_qty || 0
-                    );
+                    <td className="border p-2 text-center">
+                      {
+                        item.projection_month
+                      }
+                    </td>
 
-                  let outwardQty = 0;
+                    <td className="border p-2 text-center">
+                      {
+                        item.revision_no
+                      }
+                    </td>
 
-                  let returnedQty = 0;
+                    <td className="border p-2 text-center font-bold">
+                      {
+                        item.material_code
+                      }
+                    </td>
 
-                  if (
-                    item.stock_action ===
-                    "Issue"
-                  ) {
+                    <td className="border p-2 text-center">
+                      {
+                        item.description
+                      }
+                    </td>
 
-                    outwardQty =
-                      stockQty;
+                    <td className="border p-2 text-center text-blue-600 font-bold">
+                      {
+                        item.projection_qty
+                      }
+                    </td>
 
-                    returnedQty =
-                      projectionQty -
-                      stockQty;
+                    <td className="border p-2">
 
-                  }
-
-                  if (
-                    item.stock_action ===
-                    "Not Issue"
-                  ) {
-
-                    outwardQty = 0;
-
-                    returnedQty =
-                      projectionQty;
-
-                  }
-
-                  return (
-
-                    <tr key={item.id}>
-
-                      <td className="border p-2 text-center">
-                        {
-                          item.projection_month
+                      <select
+                        value={
+                          item.projection_action || ""
                         }
-                      </td>
 
-                      <td className="border p-2 text-center">
-                        {
-                          item.revision_no
+                        disabled={
+                          item.stock_action ===
+                          "Issue"
                         }
-                      </td>
 
-                      <td className="border p-2 text-center font-bold">
-                        {
-                          item.material_code
+                        onChange={(e) =>
+                          handleChange(
+                            index,
+                            "projection_action",
+                            e.target.value
+                          )
                         }
-                      </td>
 
-                      <td className="border p-2 text-center">
-                        {
-                          item.description
+                        className="border p-1 rounded w-full"
+                      >
+
+                        <option value="">
+                          Select
+                        </option>
+
+                        <option value="Allocate">
+                          Allocate
+                        </option>
+
+                        <option value="Un Allocate">
+                          Un Allocate
+                        </option>
+
+                      </select>
+
+                    </td>
+
+                    <td className="border p-2 text-center">
+
+                      <button
+                        onClick={() =>
+                          submitProjection(
+                            item
+                          )
                         }
-                      </td>
 
-                      <td className="border p-2 text-center text-blue-600 font-bold">
-                        {
-                          projectionQty
+                        className="
+                          bg-blue-600
+                          text-white
+                          px-3
+                          py-1
+                          rounded
+                        "
+                      >
+                        Submit
+                      </button>
+
+                    </td>
+
+                    <td className="border p-2">
+
+                      <input
+                        type="number"
+
+                        value={
+                          item.stock_qty || ""
                         }
-                      </td>
 
-                      <td className="border p-2">
-
-                        <select
-                          value={
-                            item.projection_action || ""
-                          }
-
-                          disabled={
-                            item.stock_action ===
-                            "Issue" ||
-
-                            item.stock_action ===
-                            "Not Issue"
-                          }
-
-                          onChange={(e) =>
-                            handleChange(
-                              index,
-                              "projection_action",
-                              e.target.value
-                            )
-                          }
-
-                          className="border p-1 rounded w-full"
-                        >
-
-                          <option value="">
-                            Select
-                          </option>
-
-                          <option value="Allocate">
-                            Allocate
-                          </option>
-
-                          <option value="Un Allocate">
-                            Un Allocate
-                          </option>
-
-                        </select>
-
-                      </td>
-
-                      <td className="border p-2 text-center">
-
-                        <button
-                          onClick={() =>
-                            updateProjection({
-
-                              id: item.id,
-
-                              projection_action:
-                                item.projection_action
-
-                            })
-                          }
-
-                          className="bg-blue-600 text-white px-3 py-1 rounded"
-                        >
-                          Submit
-                        </button>
-
-                      </td>
-
-                      <td className="border p-2">
-
-                        <input
-                          type="number"
-
-                          value={
-                            item.stock_qty || ""
-                          }
-
-                          onChange={(e) =>
-                            handleChange(
-                              index,
-                              "stock_qty",
-                              e.target.value
-                            )
-                          }
-
-                          className="border p-1 rounded w-full"
-                        />
-
-                      </td>
-
-                      <td className="border p-2">
-
-                        <select
-                          value={
-                            item.stock_action || ""
-                          }
-
-                          onChange={(e) =>
-                            handleChange(
-                              index,
-                              "stock_action",
-                              e.target.value
-                            )
-                          }
-
-                          className="border p-1 rounded w-full"
-                        >
-
-                          <option value="">
-                            Select
-                          </option>
-
-                          <option value="Issue">
-                            Issue
-                          </option>
-
-                          <option value="Not Issue">
-                            Not Issue
-                          </option>
-
-                        </select>
-
-                      </td>
-
-                      <td className="border p-2 text-center">
-
-                        <button
-                          onClick={() =>
-                            updateProjection({
-
-                              id: item.id,
-
-                              stock_qty:
-                                item.stock_qty,
-
-                              stock_action:
-                                item.stock_action
-
-                            })
-                          }
-
-                          className="bg-black text-white px-3 py-1 rounded"
-                        >
-                          Submit
-                        </button>
-
-                      </td>
-
-                      <td className="border p-2 text-center text-red-600 font-bold">
-                        {
-                          outwardQty
+                        onChange={(e) =>
+                          handleChange(
+                            index,
+                            "stock_qty",
+                            e.target.value
+                          )
                         }
-                      </td>
 
-                      <td className="border p-2 text-center text-green-600 font-bold">
-                        {
-                          returnedQty
+                        className="border p-1 rounded w-full"
+                      />
+
+                    </td>
+
+                    <td className="border p-2">
+
+                      <select
+                        value={
+                          item.stock_action || ""
                         }
-                      </td>
 
-                      <td className="border p-2 text-center">
+                        onChange={(e) =>
+                          handleChange(
+                            index,
+                            "stock_action",
+                            e.target.value
+                          )
+                        }
 
-                        <button
+                        className="border p-1 rounded w-full"
+                      >
 
-                          onClick={async () => {
+                        <option value="">
+                          Select
+                        </option>
 
-                            try {
+                        <option value="Issue">
+                          Issue
+                        </option>
 
-                              const response =
-                                await fetch(
-                                  "/api/projection",
-                                  {
+                        <option value="Not Issue">
+                          Not Issue
+                        </option>
 
-                                    method: "DELETE",
+                      </select>
 
-                                    headers: {
-                                      "Content-Type":
-                                        "application/json"
-                                    },
+                    </td>
 
-                                    body:
-                                      JSON.stringify({
-                                        id: item.id
-                                      })
+                    <td className="border p-2 text-center">
 
-                                  }
-                                );
+                      <button
+                        onClick={() =>
+                          submitStock(item)
+                        }
 
-                              const result =
-                                await response.json();
+                        className="
+                          bg-black
+                          text-white
+                          px-3
+                          py-1
+                          rounded
+                        "
+                      >
+                        Submit
+                      </button>
 
-                              if (result.success) {
+                    </td>
 
-                                alert(
-                                  "Projection Cleared Successfully"
-                                );
+                    <td className="border p-2 text-center text-red-600 font-bold">
 
-                                fetchData();
+                      {
+                        item.stock_action ===
+                        "Issue"
 
-                              }
+                          ? item.stock_qty || 0
 
-                            } catch (error) {
+                          : 0
+                      }
 
-                              console.log(error);
+                    </td>
 
-                            }
+                    <td className="border p-2 text-center text-green-600 font-bold">
 
-                          }}
+                      {
+                        item.returned_live_stock || 0
+                      }
 
-                          className="bg-red-600 text-white px-3 py-1 rounded"
+                    </td>
 
-                        >
+                    <td className="border p-2 text-center">
 
-                          Clear
+                      <button
+                        onClick={() =>
+                          clearProjection(
+                            item.id
+                          )
+                        }
 
-                        </button>
+                        className="
+                          bg-red-600
+                          text-white
+                          px-3
+                          py-1
+                          rounded
+                        "
+                      >
+                        Clear
+                      </button>
 
-                      </td>
+                    </td>
 
-                    </tr>
+                  </tr>
 
-                  );
-
-                }
+                )
               )
 
             ) : (
@@ -514,7 +547,11 @@ export default function ProjectionPage() {
 
                 <td
                   colSpan={13}
-                  className="border p-4 text-center"
+                  className="
+                    border
+                    p-4
+                    text-center
+                  "
                 >
                   No Projection Data Found
                 </td>
