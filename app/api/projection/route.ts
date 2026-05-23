@@ -16,9 +16,7 @@ export async function GET() {
 
       `;
 
-    return NextResponse.json(
-      data
-    );
+    return NextResponse.json(data);
 
   } catch (error) {
 
@@ -46,8 +44,7 @@ export async function PUT(
 
         FROM projection_master
 
-        WHERE id =
-        ${body.id}
+        WHERE id = ${body.id}
 
       `;
 
@@ -74,15 +71,14 @@ export async function PUT(
       undefined
     ) {
 
-      let balanceQty =
-        projectionQty;
+      let allocatedQty = 0;
 
       if (
         body.projection_action ===
         "Allocate"
       ) {
 
-        balanceQty =
+        allocatedQty =
           projectionQty;
 
       }
@@ -92,7 +88,7 @@ export async function PUT(
         "Un Allocate"
       ) {
 
-        balanceQty = 0;
+        allocatedQty = 0;
 
       }
 
@@ -105,8 +101,8 @@ export async function PUT(
           projection_action =
           ${body.projection_action},
 
-          balance_qty =
-          ${balanceQty}
+          allocated_qty =
+          ${allocatedQty}
 
         WHERE id =
         ${body.id}
@@ -125,34 +121,15 @@ export async function PUT(
           body.stock_qty || 0
         );
 
-      let balanceQty = 0;
-
-      let returnedLiveStock = 0;
-
-      if (
-        body.stock_action ===
-        "Issue"
-      ) {
-
-        balanceQty =
-          projectionQty -
-          stockQty;
-
-        returnedLiveStock =
-          balanceQty;
-
-      }
+      let allocatedQty =
+        projectionQty -
+        stockQty;
 
       if (
-        body.stock_action ===
-        "Not Issue"
+        allocatedQty < 0
       ) {
 
-        balanceQty =
-          projectionQty;
-
-        returnedLiveStock =
-          projectionQty;
+        allocatedQty = 0;
 
       }
 
@@ -168,11 +145,8 @@ export async function PUT(
           stock_action =
           ${body.stock_action},
 
-          balance_qty =
-          ${balanceQty},
-
-          returned_live_stock =
-          ${returnedLiveStock}
+          allocated_qty =
+          ${allocatedQty}
 
         WHERE id =
         ${body.id}
