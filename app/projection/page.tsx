@@ -10,11 +10,16 @@ interface ProjectionRow {
   material_code: string;
   description: string;
   projection_qty: number;
-  projection_action: "Allocate" | "Un Allocate" | "" | null;
+  projection_action: string | null;
   stock_qty: number | string;
-  stock_action: "Issue" | "Not Issue" | "" | null;
+  stock_action: string | null;
   allocated_qty?: number;
   returned_live_stock?: number;
+}
+
+interface MessageState {
+  type: "success" | "error";
+  text: string;
 }
 
 const COLUMNS = [
@@ -34,26 +39,16 @@ const COLUMNS = [
 ];
 
 export default function ProjectionPage() {
-  // savedActions tracks what's actually saved in the DB
-  // (separate from the in-memory edits in projectionData)
   const [projectionData, setProjectionData] = useState<ProjectionRow[]>([]);
-  const [savedStockActions, setSavedStockActions] = useState
-    Record<number, string | null>
-  >({});
+  const [savedStockActions, setSavedStockActions] = useState<Record<number, string | null>>({});
   const [loading, setLoading] = useState(false);
   const [submittingId, setSubmittingId] = useState<number | null>(null);
-  const [message, setMessage] = useState<{
-    type: "success" | "error";
-    text: string;
-  } | null>(null);
+  const [message, setMessage] = useState<MessageState | null>(null);
 
-  const showMessage = useCallback(
-    (type: "success" | "error", text: string) => {
-      setMessage({ type, text });
-      setTimeout(() => setMessage(null), 3000);
-    },
-    []
-  );
+  const showMessage = useCallback((type: "success" | "error", text: string) => {
+    setMessage({ type, text });
+    setTimeout(() => setMessage(null), 3000);
+  }, []);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -62,8 +57,6 @@ export default function ProjectionPage() {
       const result = await response.json();
       if (Array.isArray(result)) {
         setProjectionData(result);
-        // Capture the DB-saved stock_action separately, so dropdown changes
-        // don't accidentally lock the row before Submit
         const saved: Record<number, string | null> = {};
         result.forEach((row: ProjectionRow) => {
           saved[row.id] = row.stock_action || null;
@@ -84,15 +77,9 @@ export default function ProjectionPage() {
     fetchData();
   }, [fetchData]);
 
-  function handleChange(
-    index: number,
-    field: keyof ProjectionRow,
-    value: string
-  ) {
+  function handleChange(index: number, field: keyof ProjectionRow, value: string) {
     setProjectionData((prev) =>
-      prev.map((row, i) =>
-        i === index ? { ...row, [field]: value } : row
-      )
+      prev.map((row, i) => (i === index ? { ...row, [field]: value } : row))
     );
   }
 
@@ -140,10 +127,7 @@ export default function ProjectionPage() {
         return;
       }
       if (qty > Number(item.projection_qty || 0)) {
-        showMessage(
-          "error",
-          "Issue Quantity cannot exceed Projection Quantity"
-        );
+        showMessage("error", "Issue Quantity cannot exceed Projection Quantity");
         return;
       }
     }
@@ -202,25 +186,23 @@ export default function ProjectionPage() {
     <div className="p-6">
       <div className="flex items-center gap-4 mb-4">
         <Link href="/">
-          <button className="bg-gray-700 text-white px-4 py-2 rounded">
-            Back
-          </button>
+          <button className="bg-gray-700 text-white px-4 py-2 rounded">Back</button>
         </Link>
       </div>
 
       <h1 className="text-3xl font-bold mb-6">Projection Master</h1>
 
-      {message && (
+      {message ? (
         <div
-          className={`mb-4 p-3 rounded ${
+          className={
             message.type === "success"
-              ? "bg-green-100 text-green-800"
-              : "bg-red-100 text-red-800"
-          }`}
+              ? "mb-4 p-3 rounded bg-green-100 text-green-800"
+              : "mb-4 p-3 rounded bg-red-100 text-red-800"
+          }
         >
           {message.text}
         </div>
-      )}
+      ) : null}
 
       <div className="overflow-x-auto">
         <table className="w-full border border-collapse text-sm">
@@ -249,25 +231,15 @@ export default function ProjectionPage() {
             ) : (
               projectionData.map((item, index) => {
                 const isSubmitting = submittingId === item.id;
-                // Lock is based on what's SAVED in DB, not what's selected in dropdown
                 const savedAction = savedStockActions[item.id];
-                const isTerminal =
-                  savedAction === "Issue" || savedAction === "Not Issue";
+                const isTerminal = savedAction === "Issue" || savedAction === "Not Issue";
 
                 return (
                   <tr key={item.id}>
-                    <td className="border p-2 text-center">
-                      {item.projection_month}
-                    </td>
-                    <td className="border p-2 text-center">
-                      {item.revision_no}
-                    </td>
-                    <td className="border p-2 text-center font-bold">
-                      {item.material_code}
-                    </td>
-                    <td className="border p-2 text-center">
-                      {item.description}
-                    </td>
+                    <td className="border p-2 text-center">{item.projection_month}</td>
+                    <td className="border p-2 text-center">{item.revision_no}</td>
+                    <td className="border p-2 text-center font-bold">{item.material_code}</td>
+                    <td className="border p-2 text-center">{item.description}</td>
                     <td className="border p-2 text-center text-blue-600 font-bold">
                       {item.projection_qty}
                     </td>
@@ -276,13 +248,7 @@ export default function ProjectionPage() {
                       <select
                         value={item.projection_action || ""}
                         disabled={isTerminal || isSubmitting}
-                        onChange={(e) =>
-                          handleChange(
-                            index,
-                            "projection_action",
-                            e.target.value
-                          )
-                        }
+                        onChange={(e) => handleChange(index, "projection_action", e.target.value)}
                         className="border p-1 rounded w-full"
                       >
                         <option value="">Select</option>
@@ -307,9 +273,7 @@ export default function ProjectionPage() {
                         min="0"
                         value={item.stock_qty || ""}
                         disabled={isTerminal || isSubmitting}
-                        onChange={(e) =>
-                          handleChange(index, "stock_qty", e.target.value)
-                        }
+                        onChange={(e) => handleChange(index, "stock_qty", e.target.value)}
                         className="border p-1 rounded w-full"
                       />
                     </td>
@@ -318,9 +282,7 @@ export default function ProjectionPage() {
                       <select
                         value={item.stock_action || ""}
                         disabled={isTerminal || isSubmitting}
-                        onChange={(e) =>
-                          handleChange(index, "stock_action", e.target.value)
-                        }
+                        onChange={(e) => handleChange(index, "stock_action", e.target.value)}
                         className="border p-1 rounded w-full"
                       >
                         <option value="">Select</option>
