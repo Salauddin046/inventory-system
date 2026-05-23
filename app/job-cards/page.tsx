@@ -10,7 +10,8 @@ interface JobCardSummary {
   request_date: string;
   status: string;
   total_items: string | number;
-  issued_items: string | number;
+  total_requested_qty: string | number;
+  total_issued_qty: string | number;
   created_at: string;
 }
 
@@ -90,7 +91,7 @@ export default function JobCardListPage() {
               <th className="border p-2 text-center">Requester</th>
               <th className="border p-2 text-center">Date</th>
               <th className="border p-2 text-center">Items</th>
-              <th className="border p-2 text-center">Issued</th>
+              <th className="border p-2 text-center">Progress</th>
               <th className="border p-2 text-center">Status</th>
               <th className="border p-2 text-center">Action</th>
             </tr>
@@ -119,7 +120,9 @@ export default function JobCardListPage() {
                     {formatDate(jc.request_date)}
                   </td>
                   <td className="border p-2 text-center">{jc.total_items}</td>
-                  <td className="border p-2 text-center">{jc.issued_items}</td>
+                  <td className="border p-2 text-center font-medium">
+                    {Number(jc.total_issued_qty)} / {Number(jc.total_requested_qty)}
+                  </td>
                   <td className="border p-2 text-center">
                     <span
                       className={`px-2 py-1 rounded text-xs font-medium ${

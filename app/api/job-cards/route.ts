@@ -3,7 +3,7 @@ import sql from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
 import { generateJobCardNumber } from "@/lib/job-card-number";
 
-// GET /api/job-cards - list all job cards with item counts
+// GET /api/job-cards - list all job cards with quantity progress
 export async function GET() {
   const user = await getCurrentUser();
   if (!user) {
@@ -21,7 +21,8 @@ export async function GET() {
         jc.remarks,
         jc.created_at,
         COUNT(jci.id) AS total_items,
-        COUNT(CASE WHEN jci.status = 'Issued' THEN 1 END) AS issued_items
+        COALESCE(SUM(jci.requested_qty), 0) AS total_requested_qty,
+        COALESCE(SUM(jci.issued_qty), 0) AS total_issued_qty
       FROM job_cards jc
       LEFT JOIN job_card_items jci ON jci.job_card_id = jc.id
       GROUP BY jc.id
@@ -50,7 +51,6 @@ export async function POST(request: Request) {
 
   const { requester, request_date, remarks, items } = body;
 
-  // Validation
   if (!requester || typeof requester !== "string" || !requester.trim()) {
     return NextResponse.json({ error: "Requester is required" }, { status: 400 });
   }
@@ -63,7 +63,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "At least one material is required" }, { status: 400 });
   }
 
-  // Validate each item
   for (const item of items) {
     if (!item.material_code || typeof item.material_code !== "string") {
       return NextResponse.json({ error: "All items must have a material_code" }, { status: 400 });
