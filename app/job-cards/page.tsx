@@ -48,6 +48,27 @@ function csvEscape(value: any): string {
   return str;
 }
 
+function formatDate(s: string) {
+  if (!s) return "";
+  try {
+    return new Date(s).toLocaleDateString("en-GB");
+  } catch {
+    return s;
+  }
+}
+
+function monthYear(s: string) {
+  if (!s) return "";
+  try {
+    return new Date(s).toLocaleString("default", {
+      month: "long",
+      year: "numeric",
+    });
+  } catch {
+    return "";
+  }
+}
+
 export default function JobCardListPage() {
   const [data, setData] = useState<JobCardSummary[]>([]);
   const [loading, setLoading] = useState(true);
@@ -84,24 +105,6 @@ export default function JobCardListPage() {
     fetchData();
   }, [fetchData]);
 
-  function formatDate(s: string) {
-    if (!s) return "";
-    try {
-      return new Date(s).toLocaleDateString("en-GB");
-    } catch {
-      return s;
-    }
-  }
-
-  function monthYear(s: string) {
-    if (!s) return "";
-    try {
-      return new Date(s).toLocaleString("default", { month: "long", year: "numeric" });
-    } catch {
-      return "";
-    }
-  }
-
   function filterByDate(jc: JobCardSummary): boolean {
     if (!fromDate && !toDate) return true;
     const jcDate = new Date(jc.request_date);
@@ -131,69 +134,72 @@ export default function JobCardListPage() {
         }
       }
 
-      // Build CSV
+      // Build CSV — flat table, one row per material
+      const headers = [
+        "Job Card No",
+        "Date",
+        "Month & Year",
+        "Requested By",
+        "Type of Request",
+        "From",
+        "To Department",
+        "Material Code",
+        "Description",
+        "UoM",
+        "Requested Qty",
+        "Issued Qty",
+        "Remaining Qty",
+        "Item Status",
+        "Job Card Status",
+        "Remarks",
+      ];
+
       const lines: string[] = [];
+      lines.push(headers.map(csvEscape).join(","));
 
       for (const jc of fullDetails) {
-        // Header section (one block per job card)
-        lines.push("Job Card Header");
-        lines.push(
-          [
-            "Job Card No",
-            "Date",
-            "Month & Year",
-            "Requested By",
-            "Type of Request",
-            "From",
-            "To Department",
-            "Reason",
-            "Status",
-            "Remarks",
-          ]
-            .map(csvEscape)
-            .join(",")
-        );
-        lines.push(
-          [
-            jc.job_card_no,
-            formatDate(jc.request_date),
-            monthYear(jc.request_date),
-            jc.requester,
-            jc.request_type || "",
-            jc.from_store || "",
-            jc.to_department || "",
-            jc.reason || "",
-            jc.status,
-            jc.remarks || "",
-          ]
-            .map(csvEscape)
-            .join(",")
-        );
+        const items = jc.items || [];
 
-        // Items section
-        lines.push("");
-        lines.push("Materials");
-        lines.push(
-          [
-            "Material Code",
-            "Description",
-            "UoM",
-            "Requested Qty",
-            "Issued Qty",
-            "Remaining Qty",
-            "Item Status",
-          ]
-            .map(csvEscape)
-            .join(",")
-        );
+        if (items.length === 0) {
+          lines.push(
+            [
+              jc.job_card_no,
+              formatDate(jc.request_date),
+              monthYear(jc.request_date),
+              jc.requester,
+              jc.request_type || "",
+              jc.from_store || "",
+              jc.to_department || "",
+              "",
+              "",
+              "",
+              "",
+              "",
+              "",
+              "",
+              jc.status,
+              jc.remarks || "",
+            ]
+              .map(csvEscape)
+              .join(",")
+          );
+          continue;
+        }
 
-        for (const item of jc.items || []) {
+        for (const item of items) {
           const req = Number(item.requested_qty);
           const iss = Number(item.issued_qty || 0);
           const remaining = req - iss;
 
           lines.push(
             [
+              jc.job_card_no,
+              formatDate(jc.request_date),
+              monthYear(jc.request_date),
+              jc.requester,
+              jc.request_type || "",
+              jc.from_store || "",
+              jc.to_department || "",
               item.material_code,
               item.description || "",
               item.uom || "",
@@ -201,15 +207,13 @@ export default function JobCardListPage() {
               iss,
               remaining,
               item.status,
+              jc.status,
+              jc.remarks || "",
             ]
               .map(csvEscape)
               .join(",")
           );
         }
-
-        // Separator between job cards
-        lines.push("");
-        lines.push("");
       }
 
       const csv = lines.join("\n");
