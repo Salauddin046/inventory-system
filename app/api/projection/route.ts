@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import sql from "@/lib/db";
 
 const VALID_PROJECTION_ACTIONS = ["Allocate", "Un Allocate"];
+const VALID_STOCK_ACTIONS = ["Issue", "Not Issue"];
 
 export async function GET() {
   try {
@@ -12,7 +13,7 @@ export async function GET() {
     `;
     return NextResponse.json(data);
   } catch (error) {
-    console.error("GET /projection_master failed:", error);
+    console.error("GET /projection failed:", error);
     return NextResponse.json(
       { error: "Failed to fetch projections" },
       { status: 500 }
@@ -31,7 +32,6 @@ export async function PUT(request: Request) {
     );
   }
 
-  // Validate id
   if (!body?.id || typeof body.id !== "number") {
     return NextResponse.json(
       { error: "Invalid or missing id" },
@@ -39,7 +39,6 @@ export async function PUT(request: Request) {
     );
   }
 
-  // Validate that exactly one action is provided
   const hasProjectionAction = body.projection_action !== undefined;
   const hasStockAction = body.stock_action !== undefined;
 
@@ -52,12 +51,11 @@ export async function PUT(request: Request) {
 
   if (hasProjectionAction && hasStockAction) {
     return NextResponse.json(
-      { error: "Cannot send both projection_action and stock_action in one request" },
+      { error: "Cannot send both projection_action and stock_action" },
       { status: 400 }
     );
   }
 
-  // Validate projection_action value
   if (hasProjectionAction && !VALID_PROJECTION_ACTIONS.includes(body.projection_action)) {
     return NextResponse.json(
       { error: `projection_action must be one of: ${VALID_PROJECTION_ACTIONS.join(", ")}` },
@@ -65,7 +63,13 @@ export async function PUT(request: Request) {
     );
   }
 
-  // Validate stock_qty when stock_action is sent
+  if (hasStockAction && !VALID_STOCK_ACTIONS.includes(body.stock_action)) {
+    return NextResponse.json(
+      { error: `stock_action must be one of: ${VALID_STOCK_ACTIONS.join(", ")}` },
+      { status: 400 }
+    );
+  }
+
   let stockQty = 0;
   if (hasStockAction) {
     stockQty = Number(body.stock_qty);
@@ -75,12 +79,18 @@ export async function PUT(request: Request) {
         { status: 400 }
       );
     }
+    if (body.stock_action === "Issue" && stockQty <= 0) {
+      return NextResponse.json(
+        { error: "stock_qty must be greater than 0 for Issue" },
+        { status: 400 }
+      );
+    }
   }
 
   try {
     const result = await sql.begin(async (tx) => {
       const existing = await tx`
-        SELECT projection_qty
+        SELECT *
         FROM projection_master
         WHERE id = ${body.id}
         FOR UPDATE
@@ -90,7 +100,8 @@ export async function PUT(request: Request) {
         return { notFound: true };
       }
 
-      const projectionQty = Number(existing[0].projection_qty || 0);
+      const row = existing[0];
+      const projectionQty = Number(row.projection_qty || 0);
 
       if (hasProjectionAction) {
         const allocatedQty =
@@ -99,18 +110,26 @@ export async function PUT(request: Request) {
         await tx`
           UPDATE projection_master
           SET projection_action = ${body.projection_action},
-              allocated_qty = ${allocatedQty}
+              allocated_qty = ${allocatedQty},
+              stock_qty = 0,
+              stock_action = NULL
           WHERE id = ${body.id}
         `;
       } else {
         // stock_action branch
-        const allocatedQty = Math.max(projectionQty - stockQty, 0);
+        if (stockQty > projectionQty) {
+          throw new Error(
+            `Issue quantity (${stockQty}) cannot exceed projection quantity (${projectionQty})`
+          );
+        }
+
+        const finalStockQty = body.stock_action === "Issue" ? stockQty : 0;
 
         await tx`
           UPDATE projection_master
-          SET stock_qty = ${stockQty},
+          SET stock_qty = ${finalStockQty},
               stock_action = ${body.stock_action},
-              allocated_qty = ${allocatedQty}
+              allocated_qty = 0
           WHERE id = ${body.id}
         `;
       }
@@ -126,10 +145,10 @@ export async function PUT(request: Request) {
     }
 
     return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error("PUT /projection_master failed:", error);
+  } catch (error: any) {
+    console.error("PUT /projection failed:", error);
     return NextResponse.json(
-      { error: "Failed to update projection" },
+      { error: error.message || "Failed to update projection" },
       { status: 500 }
     );
   }
@@ -169,7 +188,7 @@ export async function DELETE(request: Request) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("DELETE /projection_master failed:", error);
+    console.error("DELETE /projection failed:", error);
     return NextResponse.json(
       { error: "Failed to delete projection" },
       { status: 500 }

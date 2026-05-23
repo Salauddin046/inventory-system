@@ -10,9 +10,10 @@ interface ProjectionRow {
   material_code: string;
   description: string;
   projection_qty: number;
-  projection_action: "Allocate" | "Un Allocate" | "";
+  projection_action: "Allocate" | "Un Allocate" | "" | null;
   stock_qty: number | string;
-  stock_action: "Issue" | "Not Issue" | "";
+  stock_action: "Issue" | "Not Issue" | "" | null;
+  allocated_qty?: number;
   returned_live_stock?: number;
 }
 
@@ -36,12 +37,18 @@ export default function ProjectionPage() {
   const [projectionData, setProjectionData] = useState<ProjectionRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [submittingId, setSubmittingId] = useState<number | null>(null);
-  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [message, setMessage] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
 
-  const showMessage = useCallback((type: "success" | "error", text: string) => {
-    setMessage({ type, text });
-    setTimeout(() => setMessage(null), 3000);
-  }, []);
+  const showMessage = useCallback(
+    (type: "success" | "error", text: string) => {
+      setMessage({ type, text });
+      setTimeout(() => setMessage(null), 3000);
+    },
+    []
+  );
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -65,9 +72,15 @@ export default function ProjectionPage() {
     fetchData();
   }, [fetchData]);
 
-  function handleChange(index: number, field: keyof ProjectionRow, value: string) {
+  function handleChange(
+    index: number,
+    field: keyof ProjectionRow,
+    value: string
+  ) {
     setProjectionData((prev) =>
-      prev.map((row, i) => (i === index ? { ...row, [field]: value } : row))
+      prev.map((row, i) =>
+        i === index ? { ...row, [field]: value } : row
+      )
     );
   }
 
@@ -106,15 +119,23 @@ export default function ProjectionPage() {
       showMessage("error", "Select Stock Action");
       return;
     }
+
     const qty = Number(item.stock_qty);
-    if (!Number.isFinite(qty) || qty < 0) {
-      showMessage("error", "Stock Quantity must be a valid non-negative number");
-      return;
+
+    if (item.stock_action === "Issue") {
+      if (!Number.isFinite(qty) || qty <= 0) {
+        showMessage("error", "Enter a valid Stock Quantity before Issue");
+        return;
+      }
+      if (qty > Number(item.projection_qty || 0)) {
+        showMessage(
+          "error",
+          "Issue Quantity cannot exceed Projection Quantity"
+        );
+        return;
+      }
     }
-    if (item.stock_action === "Issue" && qty <= 0) {
-      showMessage("error", "Enter Stock Quantity before issuing");
-      return;
-    }
+
     setSubmittingId(item.id);
     try {
       const response = await fetch("/api/projection", {
@@ -122,7 +143,7 @@ export default function ProjectionPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           id: item.id,
-          stock_qty: qty,
+          stock_qty: item.stock_action === "Issue" ? qty : 0,
           stock_action: item.stock_action,
         }),
       });
@@ -169,7 +190,9 @@ export default function ProjectionPage() {
     <div className="p-6">
       <div className="flex items-center gap-4 mb-4">
         <Link href="/">
-          <button className="bg-gray-700 text-white px-4 py-2 rounded">Back</button>
+          <button className="bg-gray-700 text-white px-4 py-2 rounded">
+            Back
+          </button>
         </Link>
       </div>
 
@@ -214,23 +237,38 @@ export default function ProjectionPage() {
             ) : (
               projectionData.map((item, index) => {
                 const isSubmitting = submittingId === item.id;
+                const isIssued = item.stock_action === "Issue";
+                const isNotIssued = item.stock_action === "Not Issue";
+                const isTerminal = isIssued || isNotIssued;
+
                 return (
                   <tr key={item.id}>
-                    <td className="border p-2 text-center">{item.projection_month}</td>
-                    <td className="border p-2 text-center">{item.revision_no}</td>
+                    <td className="border p-2 text-center">
+                      {item.projection_month}
+                    </td>
+                    <td className="border p-2 text-center">
+                      {item.revision_no}
+                    </td>
                     <td className="border p-2 text-center font-bold">
                       {item.material_code}
                     </td>
-                    <td className="border p-2 text-center">{item.description}</td>
+                    <td className="border p-2 text-center">
+                      {item.description}
+                    </td>
                     <td className="border p-2 text-center text-blue-600 font-bold">
                       {item.projection_qty}
                     </td>
+
                     <td className="border p-2">
                       <select
                         value={item.projection_action || ""}
-                        disabled={item.stock_action === "Issue" || isSubmitting}
+                        disabled={isTerminal || isSubmitting}
                         onChange={(e) =>
-                          handleChange(index, "projection_action", e.target.value)
+                          handleChange(
+                            index,
+                            "projection_action",
+                            e.target.value
+                          )
                         }
                         className="border p-1 rounded w-full"
                       >
@@ -239,29 +277,34 @@ export default function ProjectionPage() {
                         <option value="Un Allocate">Un Allocate</option>
                       </select>
                     </td>
+
                     <td className="border p-2 text-center">
                       <button
                         onClick={() => submitProjection(item)}
-                        disabled={isSubmitting}
+                        disabled={isTerminal || isSubmitting}
                         className="bg-blue-600 text-white px-3 py-1 rounded disabled:opacity-50"
                       >
                         {isSubmitting ? "..." : "Submit"}
                       </button>
                     </td>
+
                     <td className="border p-2">
                       <input
                         type="number"
                         min="0"
                         value={item.stock_qty || ""}
-                        disabled={isSubmitting}
-                        onChange={(e) => handleChange(index, "stock_qty", e.target.value)}
+                        disabled={isTerminal || isSubmitting}
+                        onChange={(e) =>
+                          handleChange(index, "stock_qty", e.target.value)
+                        }
                         className="border p-1 rounded w-full"
                       />
                     </td>
+
                     <td className="border p-2">
                       <select
                         value={item.stock_action || ""}
-                        disabled={isSubmitting}
+                        disabled={isTerminal || isSubmitting}
                         onChange={(e) =>
                           handleChange(index, "stock_action", e.target.value)
                         }
@@ -272,21 +315,25 @@ export default function ProjectionPage() {
                         <option value="Not Issue">Not Issue</option>
                       </select>
                     </td>
+
                     <td className="border p-2 text-center">
                       <button
                         onClick={() => submitStock(item)}
-                        disabled={isSubmitting}
+                        disabled={isTerminal || isSubmitting}
                         className="bg-black text-white px-3 py-1 rounded disabled:opacity-50"
                       >
                         {isSubmitting ? "..." : "Submit"}
                       </button>
                     </td>
+
                     <td className="border p-2 text-center text-red-600 font-bold">
-                      {item.stock_action === "Issue" ? item.stock_qty || 0 : 0}
+                      {isIssued ? item.stock_qty || 0 : 0}
                     </td>
+
                     <td className="border p-2 text-center text-green-600 font-bold">
                       {item.returned_live_stock || 0}
                     </td>
+
                     <td className="border p-2 text-center">
                       <button
                         onClick={() => clearProjection(item.id)}
