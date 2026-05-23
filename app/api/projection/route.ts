@@ -112,7 +112,9 @@ export async function PUT(request: Request) {
           SET projection_action = ${body.projection_action},
               allocated_qty = ${allocatedQty},
               stock_qty = 0,
-              stock_action = NULL
+              stock_action = NULL,
+              returned_live_stock = 0,
+              balance_qty = 0
           WHERE id = ${body.id}
         `;
       } else {
@@ -123,13 +125,25 @@ export async function PUT(request: Request) {
           );
         }
 
-        const finalStockQty = body.stock_action === "Issue" ? stockQty : 0;
+        let finalStockQty = 0;
+        let returnedQty = 0;
+
+        if (body.stock_action === "Issue") {
+          finalStockQty = stockQty;
+          returnedQty = projectionQty - stockQty;
+        } else {
+          // Not Issue: nothing issued, full projection returns
+          finalStockQty = 0;
+          returnedQty = projectionQty;
+        }
 
         await tx`
           UPDATE projection_master
           SET stock_qty = ${finalStockQty},
               stock_action = ${body.stock_action},
-              allocated_qty = 0
+              allocated_qty = 0,
+              returned_live_stock = ${returnedQty},
+              balance_qty = ${returnedQty}
           WHERE id = ${body.id}
         `;
       }
