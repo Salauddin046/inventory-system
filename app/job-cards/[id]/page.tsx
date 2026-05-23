@@ -143,7 +143,14 @@ export default function JobCardDetailPage() {
   }
 
   async function handleDelete() {
-    if (!confirm(`Delete job card ${data?.job_card_no}? This cannot be undone.`)) return;
+    if (!data) return;
+
+    if (data.status === "Closed") {
+      showMessage("error", "Cannot delete a closed job card");
+      return;
+    }
+
+    if (!confirm(`Delete job card ${data.job_card_no}? This cannot be undone.`)) return;
 
     setDeleting(true);
     try {
@@ -183,6 +190,8 @@ export default function JobCardDetailPage() {
     );
   }
 
+  const isClosed = data.status === "Closed";
+
   return (
     <div className="p-6">
       <div className="flex items-center justify-between mb-4">
@@ -192,8 +201,9 @@ export default function JobCardDetailPage() {
 
         <button
           onClick={handleDelete}
-          disabled={deleting}
-          className="bg-red-600 text-white px-4 py-2 rounded disabled:opacity-50"
+          disabled={deleting || isClosed}
+          title={isClosed ? "Closed job cards cannot be deleted" : ""}
+          className="bg-red-600 text-white px-4 py-2 rounded disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {deleting ? "Deleting..." : "Delete Job Card"}
         </button>

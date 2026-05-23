@@ -223,9 +223,7 @@ export default function NewJobCardPage() {
             <input
               type="date"
               value={requestDate}
-              onChange={(e) => setRequestDate(e.target.value)}
-              required
-              disabled={submitting}
+              readOnly
               className="w-full border p-2 rounded"
             />
           </div>

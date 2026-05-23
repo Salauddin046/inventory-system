@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import sql from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
 
-// GET /api/job-cards/[id] - get job card with line items (including UoM from material_master)
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -53,7 +52,6 @@ export async function GET(
   }
 }
 
-// DELETE /api/job-cards/[id] - delete entire job card (cascades to items)
 export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -70,15 +68,23 @@ export async function DELETE(
   }
 
   try {
-    const deleted = await sql`
-      DELETE FROM job_cards
-      WHERE id = ${id}
-      RETURNING id
+    // Check status before deleting
+    const [existing] = await sql`
+      SELECT status FROM job_cards WHERE id = ${id}
     `;
 
-    if (deleted.length === 0) {
+    if (!existing) {
       return NextResponse.json({ error: "Job card not found" }, { status: 404 });
     }
+
+    if (existing.status === "Closed") {
+      return NextResponse.json(
+        { error: "Cannot delete a closed job card. Closed cards are audit records." },
+        { status: 400 }
+      );
+    }
+
+    await sql`DELETE FROM job_cards WHERE id = ${id}`;
 
     return NextResponse.json({ success: true });
   } catch (error) {
