@@ -77,13 +77,70 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid job_card_item_id" }, { status: 400 });
   }
 
-  // If linked to a job card item, the issued quantity for the item should
-  // be the GOOD outward only (NG doesn't fulfill the projection)
   const fulfillingQty = gOutwardQty;
+  const isProjectionOutward = body.outward_type === "Projection" && jobCardItemId === null;
 
   try {
     const result = await sql.begin(async (tx) => {
-      // If linked to a job card item, validate before saving outward
+      let projectionId: number | null = null;
+
+      // PROJECTION AUTO-LINK LOGIC (LIFO)
+      if (isProjectionOutward) {
+        if (gOutwardQty <= 0) {
+          throw new Error("G Outward Qty must be greater than 0 for Projection outward");
+        }
+
+        // Find newest active allocated projection for this material (LIFO)
+        const activeProjections = await tx`
+          SELECT id, projection_qty, stock_action
+          FROM projection_master
+          WHERE material_code = ${body.material_code}
+            AND projection_action = 'Allocate'
+            AND (stock_action IS NULL OR stock_action = 'Issue')
+            AND (stock_action != 'Not Issue' OR stock_action IS NULL)
+          ORDER BY id DESC
+          FOR UPDATE
+        `;
+
+        // Find the first one with remaining capacity
+        let chosenProjection = null;
+        let alreadyIssued = 0;
+        let remaining = 0;
+
+        for (const proj of activeProjections) {
+          const projQty = Number(proj.projection_qty);
+          const [issuedRow] = await tx`
+            SELECT COALESCE(SUM(g_outward_qty), 0) AS total_issued
+            FROM outward_transactions
+            WHERE projection_id = ${proj.id}
+          `;
+          const issued = Number(issuedRow.total_issued || 0);
+          const rem = projQty - issued;
+
+          if (rem > 0) {
+            chosenProjection = proj;
+            alreadyIssued = issued;
+            remaining = rem;
+            break;
+          }
+        }
+
+        if (!chosenProjection) {
+          throw new Error(
+            `No active allocated projection with remaining capacity for material ${body.material_code}`
+          );
+        }
+
+        if (gOutwardQty > remaining) {
+          throw new Error(
+            `Outward qty (${gOutwardQty}) exceeds projection remaining (${remaining})`
+          );
+        }
+
+        projectionId = chosenProjection.id;
+      }
+
+      // JOB CARD LINK VALIDATION (existing logic)
       if (jobCardItemId !== null) {
         const [item] = await tx`
           SELECT id, job_card_id, requested_qty, issued_qty, status
@@ -105,8 +162,8 @@ export async function POST(request: Request) {
         }
 
         const requestedQty = Number(item.requested_qty);
-        const alreadyIssued = Number(item.issued_qty || 0);
-        const newIssued = alreadyIssued + fulfillingQty;
+        const alreadyIssuedItem = Number(item.issued_qty || 0);
+        const newIssued = alreadyIssuedItem + fulfillingQty;
 
         if (fulfillingQty <= 0) {
           throw new Error("G Outward Qty must be greater than 0 when linked to a job card");
@@ -119,14 +176,14 @@ export async function POST(request: Request) {
         }
       }
 
-      // Insert the outward record
+      // INSERT OUTWARD
       await tx`
         INSERT INTO outward_transactions (
           req_date, month, req_person, to_vendor_dept, job_card_po_no,
           material_code, material_description, type_of_material,
           req_qty, g_outward_qty, ng_outward_qty,
           uom, issuance_date, tally_ref_no, remarks,
-          outward_type, job_card_id, job_card_item_id
+          outward_type, job_card_id, job_card_item_id, projection_id
         ) VALUES (
           ${body.req_date || null}, ${body.month || null},
           ${body.req_person || null}, ${body.to_vendor_dept || null},
@@ -135,11 +192,38 @@ export async function POST(request: Request) {
           ${reqQty}, ${gOutwardQty}, ${ngOutwardQty},
           ${body.uom || null}, ${body.issuance_date || null},
           ${body.tally_ref_no || null}, ${body.remarks || null},
-          ${body.outward_type || null}, ${jobCardId}, ${jobCardItemId}
+          ${body.outward_type || null}, ${jobCardId}, ${jobCardItemId},
+          ${projectionId}
         )
       `;
 
-      // If linked to a job card item, update its issued_qty and status
+      // UPDATE PROJECTION (if auto-linked)
+      if (projectionId !== null) {
+        const [proj] = await tx`
+          SELECT projection_qty FROM projection_master WHERE id = ${projectionId}
+        `;
+        const projQty = Number(proj.projection_qty);
+
+        const [issuedRow] = await tx`
+          SELECT COALESCE(SUM(g_outward_qty), 0) AS total_issued
+          FROM outward_transactions
+          WHERE projection_id = ${projectionId}
+        `;
+        const totalIssued = Number(issuedRow.total_issued);
+        const newBalance = projQty - totalIssued;
+
+        await tx`
+          UPDATE projection_master
+          SET stock_qty = ${totalIssued},
+              stock_action = 'Issue',
+              balance_qty = ${newBalance},
+              returned_live_stock = ${newBalance},
+              allocated_qty = ${newBalance}
+          WHERE id = ${projectionId}
+        `;
+      }
+
+      // UPDATE JOB CARD ITEM (existing logic)
       if (jobCardItemId !== null) {
         const [item] = await tx`
           SELECT requested_qty, issued_qty
@@ -150,7 +234,6 @@ export async function POST(request: Request) {
         const requestedQty = Number(item.requested_qty);
         const alreadyIssued = Number(item.issued_qty || 0);
         const newIssued = alreadyIssued + fulfillingQty;
-
         const newItemStatus = newIssued >= requestedQty ? "Issued" : "Partial";
 
         await tx`
@@ -160,29 +243,25 @@ export async function POST(request: Request) {
           WHERE id = ${jobCardItemId}
         `;
 
-        // Recalculate the parent job card status
-        const parentId = jobCardId !== null ? jobCardId : null;
-        if (parentId !== null) {
+        if (jobCardId !== null) {
           const items = await tx`
-            SELECT status FROM job_card_items WHERE job_card_id = ${parentId}
+            SELECT status FROM job_card_items WHERE job_card_id = ${jobCardId}
           `;
-
           const allIssued = items.every((i: any) => i.status === "Issued");
           const anyTouched = items.some(
             (i: any) => i.status === "Issued" || i.status === "Partial"
           );
-
           const jobCardStatus = allIssued ? "Closed" : anyTouched ? "Partial" : "Open";
 
           await tx`
             UPDATE job_cards
             SET status = ${jobCardStatus}
-            WHERE id = ${parentId}
+            WHERE id = ${jobCardId}
           `;
         }
       }
 
-      return { success: true };
+      return { success: true, projectionId };
     });
 
     return NextResponse.json(result);
