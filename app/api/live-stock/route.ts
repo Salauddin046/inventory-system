@@ -1,12 +1,17 @@
 import { NextResponse } from "next/server";
 import sql from "@/lib/db";
+import { getCurrentUser } from "@/lib/auth";
 
 export async function GET(request: Request) {
+  const user = await getCurrentUser();
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const { searchParams } = new URL(request.url);
   const limit = Math.min(Number(searchParams.get("limit")) || 100, 500);
   const offset = Number(searchParams.get("offset")) || 0;
   const search = searchParams.get("search")?.trim() || "";
-
   try {
     const data = await sql`
       SELECT
@@ -48,6 +53,7 @@ export async function GET(request: Request) {
         SELECT material_code,
                SUM(allocated_qty) AS allocated_qty
         FROM projection_master
+        WHERE projection_action = 'Allocate'
         GROUP BY material_code
       ) p ON m.material_code = p.material_code
       WHERE ${search ? sql`(
@@ -57,7 +63,6 @@ export async function GET(request: Request) {
       ORDER BY m.material_code ASC
       LIMIT ${limit} OFFSET ${offset}
     `;
-
     return NextResponse.json(data);
   } catch (error) {
     console.error("GET /stock failed:", error);

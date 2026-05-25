@@ -1,10 +1,16 @@
 import { NextResponse } from "next/server";
 import sql from "@/lib/db";
+import { getCurrentUser } from "@/lib/auth";
 
 const VALID_PROJECTION_ACTIONS = ["Allocate", "Un Allocate"];
 const VALID_STOCK_ACTIONS = ["Issue", "Not Issue"];
 
 export async function GET() {
+  const user = await getCurrentUser();
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const data = await sql`
       SELECT *
@@ -22,6 +28,15 @@ export async function GET() {
 }
 
 export async function PUT(request: Request) {
+  const user = await getCurrentUser();
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  if (!user.isAdmin) {
+    return NextResponse.json({ error: "Forbidden - admin only" }, { status: 403 });
+  }
+
   let body;
   try {
     body = await request.json();
@@ -103,7 +118,22 @@ export async function PUT(request: Request) {
       const row = existing[0];
       const projectionQty = Number(row.projection_qty || 0);
 
+      // Check if any outwards are auto-linked to this projection
+      const [linkedOutwards] = await tx`
+        SELECT COALESCE(SUM(g_outward_qty), 0) AS total_linked
+        FROM outward_transactions
+        WHERE projection_id = ${body.id}
+      `;
+      const totalLinked = Number(linkedOutwards.total_linked || 0);
+
       if (hasProjectionAction) {
+        // Prevent unallocating if outwards are already linked
+        if (body.projection_action === "Un Allocate" && totalLinked > 0) {
+          throw new Error(
+            `Cannot un-allocate: ${totalLinked} units already issued via outward`
+          );
+        }
+
         const allocatedQty =
           body.projection_action === "Allocate" ? projectionQty : 0;
 
@@ -118,7 +148,13 @@ export async function PUT(request: Request) {
           WHERE id = ${body.id}
         `;
       } else {
-        // stock_action branch
+        // Manual stock_action — block if outwards have already auto-linked
+        if (totalLinked > 0) {
+          throw new Error(
+            `Cannot manually set stock action: outwards have already issued ${totalLinked} units. Use Outward page to issue more.`
+          );
+        }
+
         if (stockQty > projectionQty) {
           throw new Error(
             `Issue quantity (${stockQty}) cannot exceed projection quantity (${projectionQty})`
@@ -132,7 +168,6 @@ export async function PUT(request: Request) {
           finalStockQty = stockQty;
           returnedQty = projectionQty - stockQty;
         } else {
-          // Not Issue: nothing issued, full projection returns
           finalStockQty = 0;
           returnedQty = projectionQty;
         }
@@ -169,6 +204,15 @@ export async function PUT(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+  const user = await getCurrentUser();
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  if (!user.isAdmin) {
+    return NextResponse.json({ error: "Forbidden - admin only" }, { status: 403 });
+  }
+
   let body;
   try {
     body = await request.json();
@@ -187,6 +231,20 @@ export async function DELETE(request: Request) {
   }
 
   try {
+    // Block delete if outwards are linked
+    const [linkedOutwards] = await sql`
+      SELECT COUNT(*) AS link_count
+      FROM outward_transactions
+      WHERE projection_id = ${body.id}
+    `;
+
+    if (Number(linkedOutwards.link_count) > 0) {
+      return NextResponse.json(
+        { error: "Cannot delete: outward transactions are linked to this projection" },
+        { status: 400 }
+      );
+    }
+
     const deleted = await sql`
       DELETE FROM projection_master
       WHERE id = ${body.id}
