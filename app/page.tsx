@@ -13,6 +13,12 @@ interface DashboardData {
   openJobCards: number;
 }
 
+interface CurrentUser {
+  userId: number;
+  email: string;
+  name: string;
+}
+
 export default function DashboardPage() {
   const [dashboard, setDashboard] = useState<DashboardData>({
     totalMaterials: 0,
@@ -23,8 +29,12 @@ export default function DashboardPage() {
     openJobCards: 0,
   });
 
+  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
+  const [pendingUserCount, setPendingUserCount] = useState(0);
+
   useEffect(() => {
     fetchDashboard();
+    fetchCurrentUser();
   }, []);
 
   async function fetchDashboard() {
@@ -43,6 +53,40 @@ export default function DashboardPage() {
       console.error(error);
     }
   }
+
+  async function fetchCurrentUser() {
+    try {
+      const response = await fetch("/api/auth/me", { cache: "no-store" });
+      if (!response.ok) return;
+      const result = await response.json();
+      const user = result?.user || result;
+      if (user && user.userId) {
+        setCurrentUser(user);
+        // If admin, also fetch pending user count
+        if (user.userId === 1) {
+          fetchPendingCount();
+        }
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  async function fetchPendingCount() {
+    try {
+      const response = await fetch("/api/admin/users", { cache: "no-store" });
+      if (!response.ok) return;
+      const users = await response.json();
+      if (Array.isArray(users)) {
+        const pending = users.filter((u: any) => u.status === "pending").length;
+        setPendingUserCount(pending);
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  const isAdmin = currentUser?.userId === 1;
 
   const cards = [
     {
@@ -106,6 +150,12 @@ export default function DashboardPage() {
         <div>
           <h1 className="text-4xl font-bold mb-1">Inventory Dashboard</h1>
           <p className="text-gray-600 text-lg">Live Inventory Monitoring System</p>
+          {currentUser && (
+            <p className="text-gray-500 text-sm mt-1">
+              Logged in as: <strong>{currentUser.name}</strong>
+              {isAdmin && <span className="ml-2 text-blue-600 font-medium">(Admin)</span>}
+            </p>
+          )}
         </div>
         <LogoutButton />
       </div>
@@ -131,6 +181,24 @@ export default function DashboardPage() {
             </div>
           </Link>
         ))}
+
+        {isAdmin && (
+          <Link href="/admin/users">
+            <div className="bg-blue-50 border-2 border-blue-200 rounded-xl shadow-md hover:shadow-lg transition duration-300 p-6 cursor-pointer h-full relative">
+              <h2 className="text-2xl font-bold mb-3">
+                User Management
+              </h2>
+              <p className="text-gray-600 text-base">
+                Approve registrations, manage user access
+              </p>
+              {pendingUserCount > 0 && (
+                <span className="absolute top-4 right-4 bg-yellow-400 text-yellow-900 text-xs font-bold px-2 py-1 rounded-full">
+                  {pendingUserCount} pending
+                </span>
+              )}
+            </div>
+          </Link>
+        )}
       </div>
     </div>
   );
