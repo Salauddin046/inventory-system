@@ -194,6 +194,12 @@ function OutwardPageInner() {
 
       if (response.ok && result.success) {
         showMessage("success", "Outward Saved Successfully");
+
+        // Clear URL query params first to prevent re-prefill from useEffect
+        if (typeof window !== "undefined" && window.location.search) {
+          window.history.replaceState({}, "", "/outward");
+        }
+
         // Reset form to initial state
         setForm({
           req_date: formattedDate,
