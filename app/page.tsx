@@ -169,6 +169,9 @@ export default function DashboardPage() {
             <p className="text-gray-500 text-sm mt-1">
               Logged in as: <strong>{currentUser.name}</strong>
               {isAdmin && <span className="ml-2 text-blue-600 font-medium">(Admin)</span>}
+<Link href="/change-password" className="ml-3 text-blue-600 hover:underline text-sm">
+      Change password
+          </Link>
             </p>
           )}
         </div>
