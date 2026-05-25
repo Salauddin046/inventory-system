@@ -55,7 +55,6 @@ export default function ChangePasswordPage() {
           type: "success",
           text: "Password changed. Redirecting to login...",
         });
-        // Force redirect to login after a short delay (session is already cleared server-side)
         setTimeout(() => {
           router.push("/login");
           router.refresh();
