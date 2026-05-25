@@ -78,16 +78,21 @@ export async function POST(request: Request) {
   }
 
   const fulfillingQty = gOutwardQty;
-  const isProjectionOutward = body.outward_type === "Projection" && jobCardItemId === null;
+
+  // Determine if projection link should be attempted
+  // Triggered when outward_type is "Projection" — regardless of job card link
+  const shouldLinkProjection = body.outward_type === "Projection";
 
   try {
     const result = await sql.begin(async (tx) => {
       let projectionId: number | null = null;
 
-      // PROJECTION AUTO-LINK LOGIC (LIFO)
-      if (isProjectionOutward) {
+      // PROJECTION VALIDATION + LINK (LIFO)
+      if (shouldLinkProjection) {
         if (gOutwardQty <= 0) {
-          throw new Error("G Outward Qty must be greater than 0 for Projection outward");
+          throw new Error(
+            "G Outward Qty must be greater than 0 for Projection outward"
+          );
         }
 
         // Find newest active allocated projection for this material (LIFO)
@@ -97,14 +102,12 @@ export async function POST(request: Request) {
           WHERE material_code = ${body.material_code}
             AND projection_action = 'Allocate'
             AND (stock_action IS NULL OR stock_action = 'Issue')
-            AND (stock_action != 'Not Issue' OR stock_action IS NULL)
           ORDER BY id DESC
           FOR UPDATE
         `;
 
-        // Find the first one with remaining capacity
+        // Find first one with remaining capacity
         let chosenProjection = null;
-        let alreadyIssued = 0;
         let remaining = 0;
 
         for (const proj of activeProjections) {
@@ -119,7 +122,6 @@ export async function POST(request: Request) {
 
           if (rem > 0) {
             chosenProjection = proj;
-            alreadyIssued = issued;
             remaining = rem;
             break;
           }
@@ -127,20 +129,20 @@ export async function POST(request: Request) {
 
         if (!chosenProjection) {
           throw new Error(
-            `No active allocated projection with remaining capacity for material ${body.material_code}`
+            `No active allocated projection with remaining capacity for material ${body.material_code}. Allocate a projection first via the Projection page.`
           );
         }
 
         if (gOutwardQty > remaining) {
           throw new Error(
-            `Outward qty (${gOutwardQty}) exceeds projection remaining (${remaining})`
+            `Outward qty (${gOutwardQty}) exceeds projection remaining (${remaining}) for material ${body.material_code}`
           );
         }
 
         projectionId = chosenProjection.id;
       }
 
-      // JOB CARD LINK VALIDATION (existing logic)
+      // JOB CARD VALIDATION (existing logic)
       if (jobCardItemId !== null) {
         const [item] = await tx`
           SELECT id, job_card_id, requested_qty, issued_qty, status
@@ -166,7 +168,9 @@ export async function POST(request: Request) {
         const newIssued = alreadyIssuedItem + fulfillingQty;
 
         if (fulfillingQty <= 0) {
-          throw new Error("G Outward Qty must be greater than 0 when linked to a job card");
+          throw new Error(
+            "G Outward Qty must be greater than 0 when linked to a job card"
+          );
         }
 
         if (newIssued > requestedQty) {
@@ -176,7 +180,7 @@ export async function POST(request: Request) {
         }
       }
 
-      // INSERT OUTWARD
+      // INSERT OUTWARD (with both projection_id and job_card_item_id if applicable)
       await tx`
         INSERT INTO outward_transactions (
           req_date, month, req_person, to_vendor_dept, job_card_po_no,
@@ -197,7 +201,7 @@ export async function POST(request: Request) {
         )
       `;
 
-      // UPDATE PROJECTION (if auto-linked)
+      // UPDATE PROJECTION (if linked)
       if (projectionId !== null) {
         const [proj] = await tx`
           SELECT projection_qty FROM projection_master WHERE id = ${projectionId}
@@ -234,7 +238,8 @@ export async function POST(request: Request) {
         const requestedQty = Number(item.requested_qty);
         const alreadyIssued = Number(item.issued_qty || 0);
         const newIssued = alreadyIssued + fulfillingQty;
-        const newItemStatus = newIssued >= requestedQty ? "Issued" : "Partial";
+        const newItemStatus =
+          newIssued >= requestedQty ? "Issued" : "Partial";
 
         await tx`
           UPDATE job_card_items
@@ -249,9 +254,14 @@ export async function POST(request: Request) {
           `;
           const allIssued = items.every((i: any) => i.status === "Issued");
           const anyTouched = items.some(
-            (i: any) => i.status === "Issued" || i.status === "Partial"
+            (i: any) =>
+              i.status === "Issued" || i.status === "Partial"
           );
-          const jobCardStatus = allIssued ? "Closed" : anyTouched ? "Partial" : "Open";
+          const jobCardStatus = allIssued
+            ? "Closed"
+            : anyTouched
+            ? "Partial"
+            : "Open";
 
           await tx`
             UPDATE job_cards
@@ -261,7 +271,7 @@ export async function POST(request: Request) {
         }
       }
 
-      return { success: true, projectionId };
+      return { success: true, projectionId, jobCardItemId };
     });
 
     return NextResponse.json(result);
