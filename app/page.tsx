@@ -137,6 +137,16 @@ export default function DashboardPage() {
       description: "Raise and Issue Material Requests",
       link: "/job-cards",
     },
+{
+    title: "Projection",
+    description: "Allocate Projections and Track Issuance",
+    link: "/projection",
+  },
+  {
+    title: "Projection Upload",
+    description: "Upload Projection Data",
+    link: "/projection-upload",
+  },
     {
       title: "Live Stock",
       description: "Real-Time Stock Monitoring",

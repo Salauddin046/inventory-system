@@ -15,6 +15,8 @@ interface ProjectionRow {
   stock_action: string | null;
   allocated_qty?: number;
   returned_live_stock?: number;
+  balance_qty?: number;
+  has_linked_outwards?: boolean;
 }
 
 interface MessageState {
@@ -28,22 +30,24 @@ const COLUMNS = [
   "Material Code",
   "Description",
   "Projection Qty",
+  "Allocated",
   "Projection Action",
   "Projection Submit",
   "Stock Qty",
   "Stock Action",
   "Stock Submit",
   "Outward Qty",
-  "Returned Live Stock",
+  "Balance",
   "Clear Projection",
 ];
 
 export default function ProjectionPage() {
   const [projectionData, setProjectionData] = useState<ProjectionRow[]>([]);
-  const [savedStockActions, setSavedStockActions] = useState<Record<number, string | null>>({});
+  const [linkedSet, setLinkedSet] = useState<Set<number>>(new Set());
   const [loading, setLoading] = useState(false);
   const [submittingId, setSubmittingId] = useState<number | null>(null);
   const [message, setMessage] = useState<MessageState | null>(null);
+  const [currentUserIsAdmin, setCurrentUserIsAdmin] = useState(false);
 
   const showMessage = useCallback((type: "success" | "error", text: string) => {
     setMessage({ type, text });
@@ -53,21 +57,35 @@ export default function ProjectionPage() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await fetch("/api/projection", { cache: "no-store" });
-      const result = await response.json();
-      if (Array.isArray(result)) {
-        setProjectionData(result);
-        const saved: Record<number, string | null> = {};
-        result.forEach((row: ProjectionRow) => {
-          saved[row.id] = row.stock_action || null;
-        });
-        setSavedStockActions(saved);
+      const [projRes, outRes, meRes] = await Promise.all([
+        fetch("/api/projection", { cache: "no-store" }),
+        fetch("/api/outward", { cache: "no-store" }),
+        fetch("/api/auth/me", { cache: "no-store" }),
+      ]);
+
+      const projResult = await projRes.json();
+      const outResult = await outRes.json();
+      const meResult = await meRes.json().catch(() => ({}));
+
+      if (Array.isArray(projResult)) {
+        setProjectionData(projResult);
       } else {
-        showMessage("error", "Failed to load projections");
+        showMessage("error", projResult.error || "Failed to load projections");
       }
+
+      if (Array.isArray(outResult)) {
+        const linkedIds = new Set<number>();
+        outResult.forEach((o: any) => {
+          if (o.projection_id) linkedIds.add(Number(o.projection_id));
+        });
+        setLinkedSet(linkedIds);
+      }
+
+      const me = meResult?.user;
+      if (me && me.isAdmin) setCurrentUserIsAdmin(true);
     } catch (err) {
       console.error(err);
-      showMessage("error", "Network error loading projections");
+      showMessage("error", "Network error loading data");
     } finally {
       setLoading(false);
     }
@@ -84,10 +102,16 @@ export default function ProjectionPage() {
   }
 
   async function submitProjection(item: ProjectionRow) {
+    if (!currentUserIsAdmin) {
+      showMessage("error", "Only admin can change projection action");
+      return;
+    }
+
     if (!item.projection_action) {
       showMessage("error", "Select Projection Action");
       return;
     }
+
     setSubmittingId(item.id);
     try {
       const response = await fetch("/api/projection", {
@@ -114,6 +138,11 @@ export default function ProjectionPage() {
   }
 
   async function submitStock(item: ProjectionRow) {
+    if (!currentUserIsAdmin) {
+      showMessage("error", "Only admin can change stock action");
+      return;
+    }
+
     if (!item.stock_action) {
       showMessage("error", "Select Stock Action");
       return;
@@ -159,6 +188,11 @@ export default function ProjectionPage() {
   }
 
   async function clearProjection(id: number) {
+    if (!currentUserIsAdmin) {
+      showMessage("error", "Only admin can clear projections");
+      return;
+    }
+
     if (!confirm("Clear this projection? This cannot be undone.")) return;
     setSubmittingId(id);
     try {
@@ -188,9 +222,19 @@ export default function ProjectionPage() {
         <Link href="/">
           <button className="bg-gray-700 text-white px-4 py-2 rounded">Back</button>
         </Link>
+        {currentUserIsAdmin && (
+          <span className="px-2 py-1 rounded bg-blue-100 text-blue-800 text-xs font-medium">
+            Admin
+          </span>
+        )}
       </div>
 
-      <h1 className="text-3xl font-bold mb-6">Projection Master</h1>
+      <h1 className="text-3xl font-bold mb-2">Projection Master</h1>
+      {!currentUserIsAdmin && (
+        <p className="text-sm text-gray-600 mb-4">
+          View only. Only admin can allocate or modify projections.
+        </p>
+      )}
 
       {message ? (
         <div
@@ -231,11 +275,20 @@ export default function ProjectionPage() {
             ) : (
               projectionData.map((item, index) => {
                 const isSubmitting = submittingId === item.id;
-                const savedAction = savedStockActions[item.id];
-                const isTerminal = savedAction === "Issue" || savedAction === "Not Issue";
+                const hasLinkedOutwards = linkedSet.has(item.id);
+                const isAutoLinked = hasLinkedOutwards;
+
+                // Manual stock action disabled if auto-linked outwards exist
+                // Projection action disabled if not admin or if auto-linked
+                const projectionActionDisabled =
+                  !currentUserIsAdmin || isSubmitting || isAutoLinked;
+                const stockActionDisabled =
+                  !currentUserIsAdmin || isSubmitting || isAutoLinked;
+                const clearDisabled =
+                  !currentUserIsAdmin || isSubmitting || hasLinkedOutwards;
 
                 return (
-                  <tr key={item.id}>
+                  <tr key={item.id} className={isAutoLinked ? "bg-blue-50" : ""}>
                     <td className="border p-2 text-center">{item.projection_month}</td>
                     <td className="border p-2 text-center">{item.revision_no}</td>
                     <td className="border p-2 text-center font-bold">{item.material_code}</td>
@@ -243,12 +296,17 @@ export default function ProjectionPage() {
                     <td className="border p-2 text-center text-blue-600 font-bold">
                       {item.projection_qty}
                     </td>
+                    <td className="border p-2 text-center font-medium">
+                      {item.allocated_qty || 0}
+                    </td>
 
                     <td className="border p-2">
                       <select
                         value={item.projection_action || ""}
-                        disabled={isTerminal || isSubmitting}
-                        onChange={(e) => handleChange(index, "projection_action", e.target.value)}
+                        disabled={projectionActionDisabled}
+                        onChange={(e) =>
+                          handleChange(index, "projection_action", e.target.value)
+                        }
                         className="border p-1 rounded w-full"
                       >
                         <option value="">Select</option>
@@ -260,7 +318,7 @@ export default function ProjectionPage() {
                     <td className="border p-2 text-center">
                       <button
                         onClick={() => submitProjection(item)}
-                        disabled={isTerminal || isSubmitting}
+                        disabled={projectionActionDisabled}
                         className="bg-blue-600 text-white px-3 py-1 rounded disabled:opacity-50"
                       >
                         {isSubmitting ? "..." : "Submit"}
@@ -272,7 +330,7 @@ export default function ProjectionPage() {
                         type="number"
                         min="0"
                         value={item.stock_qty || ""}
-                        disabled={isTerminal || isSubmitting}
+                        disabled={stockActionDisabled}
                         onChange={(e) => handleChange(index, "stock_qty", e.target.value)}
                         className="border p-1 rounded w-full"
                       />
@@ -281,7 +339,7 @@ export default function ProjectionPage() {
                     <td className="border p-2">
                       <select
                         value={item.stock_action || ""}
-                        disabled={isTerminal || isSubmitting}
+                        disabled={stockActionDisabled}
                         onChange={(e) => handleChange(index, "stock_action", e.target.value)}
                         className="border p-1 rounded w-full"
                       >
@@ -294,26 +352,32 @@ export default function ProjectionPage() {
                     <td className="border p-2 text-center">
                       <button
                         onClick={() => submitStock(item)}
-                        disabled={isTerminal || isSubmitting}
-                        className="bg-black text-white px-3 py-1 rounded disabled:opacity-50"
+                        disabled={stockActionDisabled}
+                        title={
+                          isAutoLinked
+                            ? "Stock action is auto-updated by Outward saves for this projection"
+                            : ""
+                        }
+                        className="bg-black text-white px-3 py-1 rounded disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {isSubmitting ? "..." : "Submit"}
                       </button>
                     </td>
 
                     <td className="border p-2 text-center text-red-600 font-bold">
-                      {savedAction === "Issue" ? item.stock_qty || 0 : 0}
+                      {item.stock_qty || 0}
                     </td>
 
                     <td className="border p-2 text-center text-green-600 font-bold">
-                      {item.returned_live_stock || 0}
+                      {item.balance_qty || 0}
                     </td>
 
                     <td className="border p-2 text-center">
                       <button
                         onClick={() => clearProjection(item.id)}
-                        disabled={isSubmitting}
-                        className="bg-red-600 text-white px-3 py-1 rounded disabled:opacity-50"
+                        disabled={clearDisabled}
+                        title={hasLinkedOutwards ? "Cannot delete: outwards are linked" : ""}
+                        className="bg-red-600 text-white px-3 py-1 rounded disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         Clear
                       </button>
@@ -324,6 +388,10 @@ export default function ProjectionPage() {
             )}
           </tbody>
         </table>
+      </div>
+
+      <div className="mt-4 text-xs text-gray-500">
+        Blue-highlighted rows have outward transactions linked. Manual stock action is locked for those rows.
       </div>
     </div>
   );
