@@ -10,6 +10,7 @@ export interface SessionPayload {
   userId: number;
   email: string;
   name: string | null;
+  isAdmin: boolean;
 }
 
 export async function hashPassword(password: string): Promise<string> {
@@ -35,6 +36,7 @@ export async function verifySession(token: string): Promise<SessionPayload | nul
       userId: payload.userId as number,
       email: payload.email as string,
       name: (payload.name as string) || null,
+      isAdmin: Boolean(payload.isAdmin),
     };
   } catch {
     return null;

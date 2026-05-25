@@ -17,6 +17,7 @@ interface CurrentUser {
   userId: number;
   email: string;
   name: string;
+  isAdmin: boolean;
 }
 
 export default function DashboardPage() {
@@ -62,8 +63,7 @@ export default function DashboardPage() {
       const user = result?.user || result;
       if (user && user.userId) {
         setCurrentUser(user);
-        // If admin, also fetch pending user count
-        if (user.userId === 1) {
+        if (user.isAdmin) {
           fetchPendingCount();
         }
       }
@@ -86,7 +86,7 @@ export default function DashboardPage() {
     }
   }
 
-  const isAdmin = currentUser?.userId === 1;
+  const isAdmin = currentUser?.isAdmin === true;
 
   const cards = [
     {
@@ -185,9 +185,7 @@ export default function DashboardPage() {
         {isAdmin && (
           <Link href="/admin/users">
             <div className="bg-blue-50 border-2 border-blue-200 rounded-xl shadow-md hover:shadow-lg transition duration-300 p-6 cursor-pointer h-full relative">
-              <h2 className="text-2xl font-bold mb-3">
-                User Management
-              </h2>
+              <h2 className="text-2xl font-bold mb-3">User Management</h2>
               <p className="text-gray-600 text-base">
                 Approve registrations, manage user access
               </p>

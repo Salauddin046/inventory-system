@@ -4,20 +4,19 @@ import { getCurrentUser } from "@/lib/auth";
 
 const VALID_STATUSES = ["active", "pending", "disabled"];
 
-// GET /api/admin/users - list all users (admin only)
 export async function GET() {
   const user = await getCurrentUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  if (user.userId !== 1) {
+  if (!user.isAdmin) {
     return NextResponse.json({ error: "Forbidden - admin only" }, { status: 403 });
   }
 
   try {
     const data = await sql`
-      SELECT id, email, name, status, created_at
+      SELECT id, email, name, status, is_admin, created_at
       FROM users
       ORDER BY status ASC, id ASC
     `;
@@ -28,14 +27,13 @@ export async function GET() {
   }
 }
 
-// PATCH /api/admin/users - update a user's status (admin only)
 export async function PATCH(request: Request) {
   const user = await getCurrentUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  if (user.userId !== 1) {
+  if (!user.isAdmin) {
     return NextResponse.json({ error: "Forbidden - admin only" }, { status: 403 });
   }
 
@@ -61,25 +59,37 @@ export async function PATCH(request: Request) {
 
   const targetId = Number(id);
 
-  // Prevent admin from disabling themselves
-  if (targetId === 1 && status !== "active") {
+  // Don't allow disabling self
+  if (targetId === user.userId && status !== "active") {
     return NextResponse.json(
-      { error: "Cannot change status of the primary admin account" },
+      { error: "You cannot change your own account status" },
       { status: 400 }
     );
   }
 
+  // Don't allow changing another admin's status (defensive — only admin can hit this)
   try {
+    const [targetUser] = await sql`
+      SELECT is_admin FROM users WHERE id = ${targetId}
+    `;
+
+    if (!targetUser) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    if (targetUser.is_admin && status !== "active") {
+      return NextResponse.json(
+        { error: "Cannot disable another admin account" },
+        { status: 400 }
+      );
+    }
+
     const result = await sql`
       UPDATE users
       SET status = ${status}
       WHERE id = ${targetId}
       RETURNING id, email, name, status
     `;
-
-    if (result.length === 0) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
-    }
 
     return NextResponse.json({ success: true, user: result[0] });
   } catch (error: any) {

@@ -20,7 +20,7 @@ export async function POST(request: Request) {
     const cleanEmail = String(email).trim().toLowerCase();
 
     const users = await sql`
-      SELECT id, email, password_hash, name, status
+      SELECT id, email, password_hash, name, status, is_admin
       FROM users
       WHERE email = ${cleanEmail}
       LIMIT 1
@@ -38,7 +38,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
     }
 
-    // Check user status BEFORE creating session
     if (user.status === "pending") {
       return NextResponse.json(
         { error: "Your account is pending admin approval. Please wait." },
@@ -64,13 +63,14 @@ export async function POST(request: Request) {
       userId: user.id,
       email: user.email,
       name: user.name,
+      isAdmin: Boolean(user.is_admin),
     });
 
     await setSessionCookie(token);
 
     return NextResponse.json({
       success: true,
-      user: { email: user.email, name: user.name },
+      user: { email: user.email, name: user.name, isAdmin: Boolean(user.is_admin) },
     });
   } catch (error) {
     console.error("Login error:", error);
