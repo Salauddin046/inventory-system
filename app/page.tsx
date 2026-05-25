@@ -152,6 +152,11 @@ export default function DashboardPage() {
       description: "Real-Time Stock Monitoring",
       link: "/live-stock",
     },
+{
+  title: "Bulk Upload",
+  description: "Upload materials, req persons, vendors via CSV",
+  link: "/bulk-upload",
+},
   ];
 
   return (
