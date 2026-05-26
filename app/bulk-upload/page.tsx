@@ -16,28 +16,44 @@ const TAB_CONFIG: Record<Tab, {
   label: string;
   endpoint: string;
   csvColumns: string[];
-  example: string;
+  sampleRows: string[][];
+  filename: string;
   description: string;
 }> = {
   materials: {
     label: "Materials",
     endpoint: "/api/bulk-upload/materials",
     csvColumns: ["material_code", "description", "type_of_material", "uom"],
-    example: "AH019,harness 22 wire,Wire,Nos\nAH020,harness 24 wire,Wire,Nos",
+    sampleRows: [
+      ["AH019", "harness 22 wire", "AH", "Nos"],
+      ["AH020", "harness 24 wire", "AH", "Nos"],
+      ["PH001", "phone cable", "PH", "Nos"],
+    ],
+    filename: "sample_materials.csv",
     description: "Upload material master data. Required: material_code, uom. Optional: description, type_of_material.",
   },
   "req-persons": {
     label: "Requesting Persons",
     endpoint: "/api/bulk-upload/req-persons",
     csvColumns: ["req_person"],
-    example: "Salauddin\nPruthvi\nRakesh",
+    sampleRows: [
+      ["Salauddin"],
+      ["Pruthvi"],
+      ["Rakesh"],
+    ],
+    filename: "sample_req_persons.csv",
     description: "Upload names of people who can request materials.",
   },
   "vendor-depts": {
     label: "Vendors / Departments",
     endpoint: "/api/bulk-upload/vendor-depts",
     csvColumns: ["vendor_dept"],
-    example: "Vendor A\nVendor B\nMaintenance",
+    sampleRows: [
+      ["Vendor A"],
+      ["Vendor B"],
+      ["Maintenance"],
+    ],
+    filename: "sample_vendor_depts.csv",
     description: "Upload vendor or department names for the Outward form dropdown.",
   },
 };
@@ -89,6 +105,34 @@ function parseLineRespectingQuotes(line: string): string[] {
   return result;
 }
 
+function csvEscape(value: string): string {
+  if (value === null || value === undefined) return "";
+  const s = String(value);
+  if (s.includes(",") || s.includes('"') || s.includes("\n")) {
+    return `"${s.replace(/"/g, '""')}"`;
+  }
+  return s;
+}
+
+function buildSampleCSV(columns: string[], rows: string[][]): string {
+  const headerLine = columns.map(csvEscape).join(",");
+  const rowLines = rows.map((row) => row.map(csvEscape).join(","));
+  return [headerLine, ...rowLines].join("\n");
+}
+
+function downloadSampleCSV(filename: string, columns: string[], rows: string[][]) {
+  const csv = buildSampleCSV(columns, rows);
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.setAttribute("href", url);
+  link.setAttribute("download", filename);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
 export default function BulkUploadPage() {
   const [activeTab, setActiveTab] = useState<Tab>("materials");
   const [csvText, setCsvText] = useState("");
@@ -133,6 +177,10 @@ export default function BulkUploadPage() {
     setParsedData([]);
     setResult(null);
     setError(null);
+  }
+
+  function handleSampleDownload() {
+    downloadSampleCSV(config.filename, config.csvColumns, config.sampleRows);
   }
 
   async function handleUpload() {
@@ -209,13 +257,13 @@ export default function BulkUploadPage() {
         <p className="text-sm text-gray-700 mb-1">
           <strong>CSV columns (header row required):</strong> {config.csvColumns.join(", ")}
         </p>
-        <p className="text-sm text-gray-700">
-          <strong>Example:</strong>
-        </p>
-        <pre className="text-xs bg-white border p-2 mt-1 rounded overflow-x-auto">
-{config.csvColumns.join(",")}
-{"\n"}{config.example}
-        </pre>
+        <button
+          type="button"
+          onClick={handleSampleDownload}
+          className="mt-2 bg-green-600 text-white px-4 py-1 rounded text-sm"
+        >
+          Download Sample CSV
+        </button>
       </div>
 
       <div className="mb-4">
